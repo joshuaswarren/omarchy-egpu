@@ -48,7 +48,7 @@ MLX support on an integrated Apple GPU does not establish support for an externa
 
 ## Hosts and docks
 
-[Host guides](hosts/) cover page size, kernel parameters, PCI apertures, and the M2 hot-plug bus-range failure. [Dock notes](docks/) cover the OwlTree ASM2464PD chain, Maskedfish MK-Q1L, Sonnet Breakaway Box 850 T5, and ACASIS TB501 Pro. A USB-C connector or a USB4 label alone does not prove PCIe tunneling.
+[Host guides](hosts/) cover page size, kernel parameters, PCI apertures, and the M2 hot-plug bus-range failure. [Dock notes](docks/) cover the OwlTree/Rosewill chain, Maskedfish MK-Q1L, Sonnet Breakaway Box 850 T5, ACASIS TB501 Pro, and ADT-Link UT3G. A USB-C connector or a USB4 label alone does not prove PCIe tunneling.
 
 The M1 Ultra Mac Studio is not a Linux host in this repo. No result from it counts as an Apple Silicon Linux eGPU result.
 
