@@ -1,0 +1,18 @@
+SPDX-License-Identifier: GPL-2.0-only
+Base: 70d5dcedfa7fb7a3e7bd0cdb33d8315d99250142
+Status: local configuration change; not submitted upstream.
+Scope: enable nouveau in the kernel-owned hardware defaults.
+
+This config-only patch is not a driver source fix or a runtime qualification.
+
+diff --git a/arch/arm64/configs/asahi.config b/arch/arm64/configs/asahi.config
+--- a/arch/arm64/configs/asahi.config
++++ b/arch/arm64/configs/asahi.config
+@@ -48,6 +48,7 @@
+ CONFIG_DRM_ADP=m
+ CONFIG_DRM_APPLE=m
+ CONFIG_DRM_APPLE_AUDIO=y
++CONFIG_DRM_NOUVEAU=m
+ CONFIG_DRM_ACCEL=y
+ CONFIG_DRM_ACCEL_ANE=m
+ CONFIG_DRM_SIMPLEDRM=y

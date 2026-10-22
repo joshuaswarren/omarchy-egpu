@@ -3,10 +3,9 @@
 State as of 2026-10-22. Read [setup.md](setup.md) for the two routes and the
 host constraints.
 
-## Patches carried: none, for either route
+## Driver source patches: none
 
-No NVIDIA or nouveau source patch is carried in this repository, and the patch
-series for this card is intentionally empty.
+No NVIDIA or nouveau driver source patch is carried. The configuration integration patch below is separate from driver source changes.
 
 - **nouveau route:** the pinned kernel already contains GB206 chipset dispatch
   (the driver reads the chip id from the GPU's BOOT0 register and has a full
@@ -26,6 +25,17 @@ CONFIG_DRM_TTM_HELPER=m
 
 A config fragment or recipe does not change the kernel's license
 ([LICENSES.md](../../LICENSES.md)).
+
+## Persistent configuration integration
+
+The [nouveau configuration patch](patches/0001-enable-nouveau.patch) enables the driver in the kernel-owned hardware defaults at source `70d5dcedfa7fb7a3e7bd0cdb33d8315d99250142`. It uses GPL-2.0-only, inherited from the kernel's licensing terms. TTM and its helper follow Kconfig selections.
+
+Apply it through the kernel package's source-patch step, before normal configuration resolution. Keep Rust, the 16 KiB page setting, the package validator, and existing host drivers. Editing only a generated config can lose the setting when the package merges its hardware defaults.
+
+The integration check resolved the `.18` Kconfig and distribution baseline with the newer pinned hardware defaults. It enabled nouveau and TTM while retaining Rust, 16 KiB pages, native drivers and hardening settings. This was a config-only check. It did not build or qualify the newer kernel package, load a module, or run a GPU. Keep that result separate from the older module builds below.
+
+No upstream submission was made for this configuration patch.
+
 
 ## Status, precisely
 
