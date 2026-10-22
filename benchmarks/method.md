@@ -40,6 +40,50 @@ Three warm-up prompts, five timed repetitions, 60 s idle between runs. Never
 merge results from different transports (PCIe tunnel vs USB3 bridge) into one
 ranking; label the transport on every row.
 
+## Matched Linux Vulkan and macOS Metal runs
+
+Use the same method for each eGPU once its driver, hardware Vulkan probe and compute test pass. The Linux run uses the external card. The macOS run uses that Mac's own Apple GPU through Metal. Use the same physical Mac for both runs when it supports both operating systems. Record the exact Mac model and external card.
+
+This compares two complete GPU configurations. It does not isolate operating-system overhead. For an integrated-GPU comparison, such as a future M6 run, both backends must use that same integrated GPU. No M6 or eGPU result is implied by this method.
+
+1. Build the same llama.cpp Git revision on both systems. Use the same 7-8B Q4 GGUF file and confirm identical SHA-256 checksums. Record the compiler, build flags, OS, driver, and GPU selected.
+2. Keep model offload, prompt/decode lengths, CPU threads, batch sizes, KV-cache types and flash-attention policy identical. Use four CPU threads for this baseline. Confirm full model-layer offload to the selected GPU; exclude CPU fallback and split-device runs.
+3. Use a scheduled measurement window with no other GPU workload. Record power mode, thermals, power telemetry where available, and the Linux tunnel/link readings. The integrated Metal GPU has no external PCIe link; record that field as not applicable.
+4. Run three warm-up repetitions, then allow the same 60-second idle interval on both systems. Run five timed repetitions with llama-bench's built-in warm-up still enabled. Retain the raw JSON samples and stderr.
+5. Report prefill at 512 and 2048 tokens and decode at 128 tokens separately. Publish the mean, standard deviation, sample count and raw samples. Calculate a Linux-Vulkan/macOS-Metal ratio only for matched rows.
+
+From the same source revision, build Linux Vulkan with:
+
+```bash
+cmake -S . -B build-vulkan -DCMAKE_BUILD_TYPE=Release -DGGML_VULKAN=1
+cmake --build build-vulkan --config Release -j 4
+./build-vulkan/bin/llama-bench --list-devices
+```
+
+Build macOS Metal with:
+
+```bash
+cmake -S . -B build-metal -DCMAKE_BUILD_TYPE=Release -DGGML_METAL=ON -DGGML_VULKAN=OFF
+cmake --build build-metal --config Release -j 4
+./build-metal/bin/llama-bench --list-devices
+```
+
+On each system, set `BENCH` to its built llama-bench executable, `MODEL` to the matching GGUF file, and `DEVICE` to the exact name from that build's device list. Do not assume the external card is Vulkan device zero. Use the same command parameters:
+
+```bash
+"$BENCH" -m "$MODEL" --device "$DEVICE" -sm none -ngl 99 \
+  -p 512,2048 -n 128 -t 4 -b 2048 -ub 512 -ctk f16 -ctv f16 -fa off \
+  -r 3 -o json > warmup.json 2> warmup.log
+# Wait the matched 60-second idle interval before the timed command.
+"$BENCH" -m "$MODEL" --device "$DEVICE" -sm none -ngl 99 \
+  -p 512,2048 -n 128 -t 4 -b 2048 -ub 512 -ctk f16 -ctv f16 -fa off \
+  -r 5 -o json > timed.json 2> timed.log
+```
+
+Run the commands in a new result directory on each system so they do not overwrite an earlier run. If the model, memory settings or backend fails, retain that failure. Do not silently reduce offload or change the paired workload.
+
+The [upstream build guide](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md) defines the backend flags. The [llama-bench guide](https://github.com/ggml-org/llama.cpp/blob/master/tools/llama-bench/README.md) defines the options and JSON sample fields. These commands describe a future run; they have not produced a benchmark result in this repository.
+
 ## What a row is allowed to claim
 
 - **Enumeration:** the card appears in `lspci` behind the dock. Says nothing
