@@ -1,0 +1,68 @@
+xe: step migration ptes in gpu pages
+
+SPDX-License-Identifier: MIT
+Upstream-License-Identifier: MIT
+
+Base revision: linux-aurora source 6f63677751854d57bcfac172314957bc2197c05f
+Status: experimental. Never run on hardware. Not submitted upstream.
+
+License state of the file this patch modifies, as read from its header at the
+base revision (keep that header in place; this patch does not add a copyright
+line and does not change the SPDX identifier):
+
+  drivers/gpu/drm/xe/xe_migrate.c   MIT, Copyright (c) 2020 Intel Corporation
+
+Upstream MIT text as it applies to the changed file:
+
+  Permission is hereby granted, free of charge, to any person obtaining a
+  copy of this software and associated documentation files (the "Software"),
+  to deal in the Software without restriction, including without limitation
+  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+  and/or sell copies of the Software, and to permit persons to whom the
+  Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+  DEALINGS IN THE SOFTWARE.
+
+What this patch changes: the migration engine masks addresses and advances its
+cursor in GPU-page units instead of host-page units, and the page-table backing
+check accepts host-page-rounded backing while the hardware table size stays
+4 KiB. This is part 4 of 4 in the 16K xe series.
+
+--- a/drivers/gpu/drm/xe/xe_migrate.c
++++ b/drivers/gpu/drm/xe/xe_migrate.c
+@@ -659,7 +659,7 @@
+ 			u64 addr, flags = 0;
+ 			bool devmem = false;
+ 
+-			addr = xe_res_dma(cur) & PAGE_MASK;
++			addr = ALIGN_DOWN(xe_res_dma(cur), XE_PAGE_SIZE);
+ 			if (is_vram) {
+ 				if (vm->flags & XE_VM_FLAG_64K) {
+ 					u64 va = cur_ofs * XE_PAGE_SIZE / 8;
+@@ -680,7 +680,7 @@
+ 			bb->cs[bb->len++] = lower_32_bits(addr);
+ 			bb->cs[bb->len++] = upper_32_bits(addr);
+ 
+-			xe_res_next(cur, min_t(u32, size, PAGE_SIZE));
++			xe_res_next(cur, min_t(u32, size, XE_PAGE_SIZE));
+ 			cur_ofs += 8;
+ 		}
+ 	}
+@@ -1922,7 +1922,7 @@
+ 					if (idx == chunk)
+ 						goto next_cmd;
+ 
+-					xe_tile_assert(tile, xe_bo_size(pt_bo) == SZ_4K);
++					xe_tile_assert(tile, xe_bo_size(pt_bo) == PAGE_ALIGN(SZ_4K));
+ 
+ 					/* Map a PT at most once */
+ 					if (pt_bo->update_index < 0)

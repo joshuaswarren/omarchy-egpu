@@ -1,0 +1,72 @@
+xe: separate host allocation from hardware pages
+
+SPDX-License-Identifier: MIT
+Upstream-License-Identifier: MIT
+
+Base revision: linux-aurora source 6f63677751854d57bcfac172314957bc2197c05f
+Status: experimental. Never run on hardware. Not submitted upstream.
+
+License state of the files this patch modifies, as read from their headers at
+the base revision (keep those headers in place; this patch does not add a
+copyright line and does not change any SPDX identifier):
+
+  drivers/gpu/drm/xe/xe_bo.c      MIT, Copyright (c) 2021 Intel Corporation
+  drivers/gpu/drm/xe/xe_query.c   MIT, Copyright (c) 2022 Intel Corporation
+
+Upstream MIT text as it applies to the changed files:
+
+  Permission is hereby granted, free of charge, to any person obtaining a
+  copy of this software and associated documentation files (the "Software"),
+  to deal in the Software without restriction, including without limitation
+  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+  and/or sell copies of the Software, and to permit persons to whom the
+  Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+  DEALINGS IN THE SOFTWARE.
+
+What this patch changes: buffer allocation rounds up to the host page instead
+of assuming a 4 KiB minimum, TTM alignment becomes one host page, and the
+userspace minimum-alignment query reports the real host page size unless the
+device requires 64K. This is part 1 of 4 in the 16K xe series.
+
+--- a/drivers/gpu/drm/xe/xe_bo.c
++++ b/drivers/gpu/drm/xe/xe_bo.c
+@@ -2356,15 +2356,16 @@
+ 		flags |= XE_BO_FLAG_INTERNAL_64K;
+ 		alignment = align >> PAGE_SHIFT;
+ 	} else {
+-		aligned_size = ALIGN(size, SZ_4K);
++		aligned_size = PAGE_ALIGN(size);
+ 		flags &= ~XE_BO_FLAG_INTERNAL_64K;
+-		alignment = SZ_4K >> PAGE_SHIFT;
++		alignment = 1;
+ 	}
+ 
+ 	if (type == ttm_bo_type_device && aligned_size != size) {
+ 		xe_bo_free(bo);
+ 		return ERR_PTR(-EINVAL);
+ 	}
++	size = aligned_size;
+ 
+ 	if (!bo) {
+ 		bo = xe_bo_alloc();
+--- a/drivers/gpu/drm/xe/xe_query.c
++++ b/drivers/gpu/drm/xe/xe_query.c
+@@ -345,7 +345,7 @@
+ 	config->info[DRM_XE_QUERY_CONFIG_FLAGS] |=
+ 		DRM_XE_QUERY_CONFIG_FLAG_HAS_PURGING_SUPPORT;
+ 	config->info[DRM_XE_QUERY_CONFIG_MIN_ALIGNMENT] =
+-		xe->info.vram_flags & XE_VRAM_FLAGS_NEED64K ? SZ_64K : SZ_4K;
++		xe->info.vram_flags & XE_VRAM_FLAGS_NEED64K ? SZ_64K : PAGE_SIZE;
+ 	config->info[DRM_XE_QUERY_CONFIG_VA_BITS] = xe->info.va_bits;
+ 	config->info[DRM_XE_QUERY_CONFIG_MAX_EXEC_QUEUE_PRIORITY] =
+ 		xe_exec_queue_device_get_max_priority(xe);

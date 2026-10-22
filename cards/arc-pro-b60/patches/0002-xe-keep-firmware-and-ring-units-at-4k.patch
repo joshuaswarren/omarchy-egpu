@@ -1,0 +1,94 @@
+xe: keep firmware and ring units at 4k
+
+SPDX-License-Identifier: MIT
+Upstream-License-Identifier: MIT
+
+Base revision: linux-aurora source 6f63677751854d57bcfac172314957bc2197c05f
+Status: experimental. Never run on hardware. Not submitted upstream.
+
+License state of the files this patch modifies, as read from their headers at
+the base revision (keep those headers in place; this patch does not add a
+copyright line and does not change any SPDX identifier):
+
+  drivers/gpu/drm/xe/xe_guc.c              MIT, Copyright (c) 2022 Intel Corporation
+  drivers/gpu/drm/xe/xe_guc_ct.c           MIT, Copyright (c) 2022 Intel Corporation
+  drivers/gpu/drm/xe/regs/xe_engine_regs.h MIT, Copyright (c) 2023 Intel Corporation
+
+Upstream MIT text as it applies to the changed files:
+
+  Permission is hereby granted, free of charge, to any person obtaining a
+  copy of this software and associated documentation files (the "Software"),
+  to deal in the Software without restriction, including without limitation
+  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+  and/or sell copies of the Software, and to permit persons to whom the
+  Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+  DEALINGS IN THE SOFTWARE.
+
+What this patch changes: GuC log and advertisement addresses, the
+command-transmission layout assertions, and the ring size encoding stay in
+4 KiB GPU-page units regardless of the host page size. This is part 2 of 4 in
+the 16K xe series.
+
+--- a/drivers/gpu/drm/xe/xe_guc.c
++++ b/drivers/gpu/drm/xe/xe_guc.c
+@@ -106,7 +106,7 @@
+ 
+ static u32 guc_ctl_log_params_flags(struct xe_guc *guc)
+ {
+-	u32 offset = guc_bo_ggtt_addr(guc, guc->log.bo) >> PAGE_SHIFT;
++	u32 offset = guc_bo_ggtt_addr(guc, guc->log.bo) >> XE_PTE_SHIFT;
+ 	u32 flags;
+ 
+ 	#if (((XE_GUC_LOG_CRASH_DUMP_BUFFER_SIZE) % SZ_1M) == 0)
+@@ -152,7 +152,7 @@
+ 
+ static u32 guc_ctl_ads_flags(struct xe_guc *guc)
+ {
+-	u32 ads = guc_bo_ggtt_addr(guc, guc->ads.bo) >> PAGE_SHIFT;
++	u32 ads = guc_bo_ggtt_addr(guc, guc->ads.bo) >> XE_PTE_SHIFT;
+ 	u32 flags = FIELD_PREP(GUC_ADS_ADDR, ads);
+ 
+ 	return flags;
+--- a/drivers/gpu/drm/xe/xe_guc_ct.c
++++ b/drivers/gpu/drm/xe/xe_guc_ct.c
+@@ -317,8 +317,8 @@
+ 	struct xe_gt *gt = ct_to_gt(ct);
+ 	int err;
+ 
+-	xe_gt_assert(gt, !(guc_h2g_size() % PAGE_SIZE));
+-	xe_gt_assert(gt, !(guc_g2h_size() % PAGE_SIZE));
++	xe_gt_assert(gt, !(guc_h2g_size() % XE_PAGE_SIZE));
++	xe_gt_assert(gt, !(guc_g2h_size() % XE_PAGE_SIZE));
+ 
+ 	err = drmm_mutex_init(&xe->drm, &ct->lock);
+ 	if (err)
+--- a/drivers/gpu/drm/xe/regs/xe_engine_regs.h
++++ b/drivers/gpu/drm/xe/regs/xe_engine_regs.h
+@@ -6,7 +6,7 @@
+ #ifndef _XE_ENGINE_REGS_H_
+ #define _XE_ENGINE_REGS_H_
+ 
+-#include <asm/page.h>
++#include <linux/sizes.h>
+ 
+ #include "regs/xe_reg_defs.h"
+ 
+@@ -56,7 +56,7 @@
+ #define RING_START(base)			XE_REG((base) + 0x38)
+ 
+ #define RING_CTL(base)				XE_REG((base) + 0x3c)
+-#define   RING_CTL_SIZE(size)			((size) - PAGE_SIZE) /* in bytes -> pages */
++#define   RING_CTL_SIZE(size)			((size) - SZ_4K)
+ 
+ #define RING_START_UDW(base)			XE_REG((base) + 0x48)
+ 
