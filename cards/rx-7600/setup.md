@@ -5,9 +5,9 @@ identity live in [README.md](README.md). Nothing here is a performance claim.
 
 ## Hardware chain and power
 
-Current chain, measured 2026-10-22: host USB4 port, certified cable, OwlTree
+Measured chain on 2026-10-22: host USB4 port, cable, OwlTree
 M.2-to-PCIe x16 dock (ASMedia ASM2464PD, external ATX PSU), card in the x16
-slot. See [docks/](../../docks/) for enclosure notes and power wiring.
+slot. The cable's certification and PSU model were not recorded. See [docks/](../../docks/) for power requirements.
 
 Power rules:
 
@@ -26,11 +26,11 @@ On Apple Silicon hosts (aarch64, 16 KiB-page kernel):
 
 ```bash
 # firmware for the card (absent on our lab hosts, checked 2026-10-16)
-pacman -S linux-firmware-amdgpu linux-firmware-whence
+sudo pacman -S linux-firmware-amdgpu linux-firmware-whence
 # userspace Vulkan stack
-pacman -S vulkan-radeon vulkan-icd-loader vulkan-tools
+sudo pacman -S vulkan-radeon vulkan-icd-loader vulkan-tools
 # diagnostics
-pacman -S pciutils bolt
+sudo pacman -S pciutils bolt
 ```
 
 `vulkan-radeon` 26.2.5-1 and `linux-firmware-amdgpu` 20260916-1 exist for
@@ -62,10 +62,10 @@ Apple PCIe tunnel:
   2 GiB base-part window. Whether it can fit the 8 GiB Pro/Max window alongside
   the other consumers is untested; the measured run got the 256 MiB fallback
   BAR assigned and the small windows exhausted. Design for the 256 MiB BAR.
-- BAR mapping type is SoC-specific in the kernel source (posted maps on base
-  M1 parts risk an SError; M2 parts need non-posted). A tunnel BAR mapping
-  failure shows up as `SError` or `Unhandled fault` in the kernel log. On that
-  signature, stop: pull nothing, power off the host with the card attached.
+- BAR mapping type is SoC-specific in the kernel source. Base M1 uses posted
+  mappings; a non-posted mapping there risks an SError. M2 Max requires
+  non-posted mappings. Stop at an SError or unhandled fault; retain the powered
+  card and logs while recovering the host.
 - Tunnel PCIe-C nodes carry no `dma-coherent` (source read). DMA cost is
   unmeasured.
 - The tunnel transport itself ships in the published kernel config
@@ -74,7 +74,7 @@ Apple PCIe tunnel:
 
 ## Read-only inspection
 
-Safe on any host, at any time:
+Inspect the powered device and its parent bridges:
 
 ```bash
 lspci -Dtv                              # full tree with domains
