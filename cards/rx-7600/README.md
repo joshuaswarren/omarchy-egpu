@@ -20,14 +20,12 @@ observed failure.
 
 | Host | Stage | Evidence |
 |---|---|---|
-| 14-inch M2 Max MacBook Pro | **MEASURED:** normal-boot BAR assignment and partial amdgpu initialization. **BLOCKED:** GFX MES KIQ ring test fails; RADV and inference unrun; cable hot-plug untested | [Current host result](../../hosts/m2-max/README.md), [historical transport snapshot](../../benchmarks/2026-10-22-rx7600-14in-m2max-transport.md) |
+| 14-inch M2 Max MacBook Pro | **MEASURED:** amdgpu initializes all rings, RADV enumerates the card, and llama.cpp Vulkan runs on it. Numbers in the benchmark record. Reproduction requires unpublished local driver and device-tree changes; hot-plug untested | [Benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md), [host result](../../hosts/m2-max/README.md) |
 | 13-inch M1 MacBook Pro | **BLOCKED**: no amdgpu in the kernel build that host runs (checked 2026-10-16); no attach attempted | [setup.md](setup.md) |
 | 16-inch M1 Max MacBook Pro | **BLOCKED**: no attach attempted, no run | |
 | x86 Omarchy | **BLOCKED**: no reference run recorded on our x86 hosts | |
-| Driver experiments | **MEASURED:** locally patched amdgpu reaches PSP, SMU and DMUB initialization on the M2 Max, but the GPU probe fails | [patches.md](patches.md) |
 
-There is no GPU compute or inference result for this card on any host. PCI
-enumeration and a healthy Thunderbolt link are not GPU throughput.
+This is the first card in this repo with a measured Linux inference result on an Apple Silicon host. It is not yet a recipe a stock system can follow: the working run depends on a local amdgpu build and one device-tree change that are not published. Enumerated BARs and a healthy link alone never proved compute; the numbers below did.
 
 ## In this directory
 

@@ -103,8 +103,6 @@ host guides.
 | File | Card | Type | Status |
 |---|---|---|---|
 | [2026-10-22-rx7600-14in-m2max-transport.md](2026-10-22-rx7600-14in-m2max-transport.md) | RX 7600 | Transport record (enumeration, BARs, link). Not a performance benchmark | MEASURED |
+| [2026-10-22-rx7600-m2max-llamacpp-vulkan.md](2026-10-22-rx7600-m2max-llamacpp-vulkan.md) | RX 7600 | llama.cpp Vulkan inference, single-host (3 repetitions; matched Metal baseline not run) | MEASURED |
 
-Later driver probes are documented in the [M2 Max host guide](../hosts/m2-max/README.md). They remain blocked before a working GPU and are not inference benchmarks.
-
-No performance row exists yet for any card. When one lands, it appears here
-with its full environment block.
+The working RX 7600 run is documented in the [host guide](../hosts/m2-max/README.md) and its [benchmark record](2026-10-22-rx7600-m2max-llamacpp-vulkan.md); it depends on unpublished kernel and device-tree changes.
