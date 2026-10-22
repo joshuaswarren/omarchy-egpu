@@ -60,5 +60,7 @@ host guides.
 |---|---|---|---|
 | [2026-10-22-rx7600-14in-m2max-transport.md](2026-10-22-rx7600-14in-m2max-transport.md) | RX 7600 | Transport record (enumeration, BARs, link). Not a performance benchmark | MEASURED |
 
+Later driver probes are documented in the [M2 Max host guide](../hosts/m2-max/README.md). They remain blocked before a working GPU and are not inference benchmarks.
+
 No performance row exists yet for any card. When one lands, it appears here
 with its full environment block.

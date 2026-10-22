@@ -20,11 +20,11 @@ observed failure.
 
 | Host | Stage | Evidence |
 |---|---|---|
-| 14-inch M2 Max MacBook Pro | **MEASURED** for transport (PCI enumeration, BAR assignment result, negotiated link). **BLOCKED** for GPU runtime: BAR allocation incomplete, no driver bound, no Vulkan device | [measurement record](../../benchmarks/2026-10-22-rx7600-14in-m2max-transport.md), [host guide](../../hosts/m2-max/README.md) |
+| 14-inch M2 Max MacBook Pro | **MEASURED:** normal-boot BAR assignment and partial amdgpu initialization. **BLOCKED:** GFX MES KIQ ring test fails; RADV and inference unrun; cable hot-plug untested | [Current host result](../../hosts/m2-max/README.md), [historical transport snapshot](../../benchmarks/2026-10-22-rx7600-14in-m2max-transport.md) |
 | 13-inch M1 MacBook Pro | **BLOCKED**: no amdgpu in the kernel build that host runs (checked 2026-10-16); no attach attempted | [setup.md](setup.md) |
 | 16-inch M1 Max MacBook Pro | **BLOCKED**: no attach attempted, no run | |
 | x86 Omarchy | **BLOCKED**: no reference run recorded on our x86 hosts | |
-| Driver module set | **BUILT-UNTESTED** | [patches.md](patches.md) |
+| Driver experiments | **MEASURED:** locally patched amdgpu reaches PSP, SMU and DMUB initialization on the M2 Max, but the GPU probe fails | [patches.md](patches.md) |
 
 There is no GPU compute or inference result for this card on any host. PCI
 enumeration and a healthy Thunderbolt link are not GPU throughput.
@@ -34,5 +34,5 @@ enumeration and a healthy Thunderbolt link are not GPU throughput.
 | Page | Contents |
 |---|---|
 | [setup.md](setup.md) | Packages, card and host constraints, read-only inspection, known issues |
-| [patches.md](patches.md) | Carried patches, the out-of-tree module build, upstream status |
+| [patches.md](patches.md) | Public patch boundary, local experimental status, and upstream status |
 | [ai.md](ai.md) | Which local-AI stacks can use this card and where |

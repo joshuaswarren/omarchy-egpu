@@ -3,11 +3,13 @@
 Practical setup for the ASRock Radeon RX 7600 Challenger 8GB OC. Status and
 identity live in [README.md](README.md). Nothing here is a performance claim.
 
+The latest M2 Max probe remains **BLOCKED** in GFX initialization after PSP, SMU and DMUB initialize. Normal-boot BAR assignment now succeeds. See the [current measured result](../../hosts/m2-max/README.md). The local driver patch series is not published here.
+
 ## Hardware chain and power
 
-Measured chain on 2026-10-22: host USB4 port, cable, OwlTree
-M.2-to-PCIe x16 dock (ASMedia ASM2464PD, external ATX PSU), card in the x16
-slot. The cable's certification and PSU model were not recorded. See [docks/](../../docks/) for power requirements.
+The measured driver-probe chain on 2026-10-22 uses the host USB4 port,
+OwlTree dock, Rosewill ASM2464PD USB4 enclosure, and this card.
+The cable's certification and PSU model were not recorded. See [docks/](../../docks/) for power requirements.
 
 Power rules:
 
@@ -52,16 +54,16 @@ Apple PCIe tunnel:
 
 - The tunnel **requires a 16 KiB-page kernel** (`CONFIG_PCIE_APPLE` depends on
   `PAGE_SIZE_16KB` in the kernel source). amdgpu GPU pages are 4 KiB and
-  independent of the host page size (source read), so the driver is expected
-  to be portable. Expected, not yet proven at runtime.
+  independent of the host page size. A locally patched driver now passes
+  several initialization stages, but GFX still fails. This is not an unmodified-driver portability result.
 - Tunnel memory windows by SoC (device-tree source read): **2 GiB**
   64-bit prefetchable on base M1 and M2 parts; **8 GiB** on Pro/Max/Ultra and
   M3 parts. Every variant also has a 1 GiB 32-bit prefetchable window and
   roughly 1 GiB non-prefetchable.
 - Resizable BAR: a full-VRAM BAR (8 GiB for this card) cannot map inside the
   2 GiB base-part window. Whether it can fit the 8 GiB Pro/Max window alongside
-  the other consumers is untested; the measured run got the 256 MiB fallback
-  BAR assigned and the small windows exhausted. Design for the 256 MiB BAR.
+  the other consumers is untested. The driver requested 8 GiB in later probes,
+  then continued with the restored 256 MiB BAR after resizing failed.
 - BAR mapping type is SoC-specific in the kernel source. Base M1 uses posted
   mappings; a non-posted mapping there risks an SError. M2 Max requires
   non-posted mappings. Stop at an SError or unhandled fault; retain the powered
@@ -89,62 +91,12 @@ sudo dmesg | grep -iE 'amdgpu|bar |no space|busn_res|serror|pcie-apple|thunderbo
 With a driver bound, `vulkaninfo --summary` must list the Radeon as a device.
 A software renderer or the integrated Apple GPU does not qualify.
 
-## Known issues (all measured 2026-10-22 unless noted)
+## Known issues
 
-1. **First hotplug clips the tunnel bus range.** The bridge stack trains one
-   level per scan and the first pass leaves a bus-number conflict, so deeper
-   devices are unusable:
+1. **Assigned BARs do not prove working memory access.** Later normal boots assign BAR0, BAR2, BAR5 and audio without a rescan. CPU reads from the 64-bit BAR0/BAR2 window return all-ones; BAR5 and ROM reads work.
+2. **GFX initialization fails.** Local driver changes allow PSP, SMU and DMUB initialization, but the MES KIQ ring test returns `-110`. No usable GPU bind or clean full driver run is established.
+3. **Device-memory access needs care.** Ordinary VRAM stores caused alignment faults. Mapping the BAR Normal-NC instead hung the host. Do not copy that experiment as a workaround.
+4. **Cable hot-plug remains untested.** The historical 13:10Z snapshot needed manual bridge rescans and had small-BAR allocation failures. Later normal-boot results do not establish a fixed hot-plug path.
+5. **Firmware and driver packages remain separate prerequisites.** Firmware alone cannot add amdgpu to a kernel built without it. The local test build is not a released package.
 
-   ```text
-   pci_bus 0001:04: busn_res: can not insert [bus 04-03] under [bus 03]
-   pci 0001:03:00.0: devices behind bridge are unusable because [bus 04] cannot be assigned for them
-   ```
-
-   The host-specific fix (remove the dock's upstream bridge, rescan its
-   parent, repeat once per level) is documented with safety boundaries in the
-   [M2 Max host guide](../../hosts/m2-max/README.md).
-
-2. **Small BARs fail to assign while the large BARs succeed.** The 256 MiB
-   BAR 0 and 2 MiB BAR 2 landed inside the 8 GiB prefetchable window; the
-   small windows across five bridge levels did not:
-
-   ```text
-   pci 0001:05:00.0: BAR 0 [mem 0xc00000000-0xc0fffffff 64bit pref]: assigned
-   pci 0001:05:00.0: BAR 2 [mem 0xc10000000-0xc101fffff 64bit pref]: assigned
-   pci 0001:05:00.0: BAR 5 [mem size 0x00100000]: can't assign; no space
-   pci 0001:05:00.0: BAR 4 [io  size 0x0100]: can't assign; no space
-   pci 0001:05:00.0: ROM [mem size 0x00020000 pref]: can't assign; no space
-   pci 0001:05:00.1: BAR 0 [mem size 0x00004000]: can't assign; no space
-   ```
-
-   Whether an incomplete small-BAR set blocks a driver bind is unknown; no
-   driver run exists yet.
-
-3. **The PCIe link inside the tunnel trained at its minimum.** The kernel
-   reports the slowest link in the path, while the Thunderbolt layer reports
-   40 Gb/s each way:
-
-   ```text
-   pci 0001:05:00.0: 2.000 Gb/s available PCIe bandwidth, limited by 2.5 GT/s PCIe x1 link at 0001:01:00.0 (capable of 126.024 Gb/s with 16.0 GT/s PCIe x8 link)
-   ```
-
-   Treat 2 Gb/s as the measured idle-state link, not a transport ceiling:
-   re-read `LnkSta` under load before drawing bandwidth conclusions.
-
-4. **No driver binds on the published kernel config.** Scoped fact: the
-   `linux-aurora` 7.2.10-2 config has `CONFIG_DRM_AMDGPU` off (read
-   2026-10-22). In logs the signature is silence: no `amdgpu` lines at all,
-   no `Kernel driver in use`. It is a packaging state, not a card fault, and
-   it can change with a future package.
-
-5. **Firmware is missing until installed.** On our lab hosts
-   `/usr/lib/firmware/amdgpu` did not exist (checked 2026-10-16). Expected log
-   signature once a driver loads: `Direct firmware load for amdgpu/... failed`.
-
-6. **Never hot-unplug.** A cable pull with the card still known to the kernel
-   is a surprise removal; the kernel source comments that NVMe teardown
-   through a dead aperture can wedge the SoC. Eject and power-down sequences
-   live in the host guides.
-
-The verbatim excerpts behind items 1 to 3, plus the full environment record,
-are in [benchmarks/](../../benchmarks/2026-10-22-rx7600-14in-m2max-transport.md).
+The [host guide](../../hosts/m2-max/README.md) contains the measured stages, diagnostic output, inference boundary, and historical rescan safety notes.

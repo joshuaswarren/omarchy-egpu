@@ -2,7 +2,7 @@
 
 Set up an external GPU on Omarchy, check each layer, and run local inference when the card is ready. This repo covers AMD RX 7600 and RX 9070, Intel Arc Pro B60, and NVIDIA RTX 5060 Ti on x86 and Apple Silicon Linux hosts.
 
-The current Apple Silicon result is PCI enumeration of an RX 7600 on a 14-inch M2 Max MacBook Pro. BAR allocation still fails. There is no verified GPU inference result for that combination. Module builds and a working USB4 link do not prove GPU compute support.
+The RX 7600 on a 14-inch M2 Max MacBook Pro now has assigned BARs on normal boots. A locally patched amdgpu passes PSP, SMU and DMUB initialization, then fails the MES KIQ ring test in GFX initialization. The card remains **BLOCKED**. RADV and llama.cpp have not run; cable hot-plug is still untested. See the [measured result](hosts/m2-max/).
 
 ## Quick start
 
@@ -28,7 +28,7 @@ This matrix separates evidence stages. `MEASURED` names an actual runtime observ
 
 | Card | 13-inch M1 MacBook Pro | 16-inch M1 Max MacBook Pro | 14-inch M2 Max MacBook Pro | M6 Mac mini | x86 Omarchy |
 |---|---|---|---|---|---|
-| RX 7600 8GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | MEASURED: PCI enumeration; BLOCKED: BAR allocation | BLOCKED: host transport support | BLOCKED: no reference run recorded |
+| RX 7600 8GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | MEASURED: normal-boot BARs and partial driver initialization; BLOCKED: GFX ring test | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | RX 9070 16GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | Arc Pro B60 24GB | BLOCKED: xe 4K-page requirement | BLOCKED: xe 4K-page requirement | BLOCKED: xe 4K-page requirement | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | RTX 5060 Ti 16GB | BUILT-UNTESTED: nouveau, shared 16K target | BUILT-UNTESTED: shared target, host config unverified | BUILT-UNTESTED: nouveau, shared 16K target | BLOCKED: no host-specific build or transport proof | BLOCKED: no reference run recorded |

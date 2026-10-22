@@ -4,7 +4,7 @@ A dock needs a working PCIe tunnel, a powered slot, and the card's auxiliary pow
 
 | Dock or enclosure | Role | What this repo verifies |
 |---|---|---|
-| OwlTree M.2-to-PCIe x16 dock, ASM2464PD | USB4 bridge plus an external ATX supply and GPU adapter | RX 7600 PCI enumeration on a 14-inch M2 Max MacBook Pro; BAR allocation still fails |
+| OwlTree M.2-to-PCIe x16 dock with Rosewill ASM2464PD enclosure | USB4 bridge, GPU adapter, and external ATX supply | RX 7600 normal-boot BAR assignment and partial driver initialization on a 14-inch M2 Max MacBook Pro; GFX still fails |
 | Maskedfish MK-Q1L | Thunderbolt PCIe dock | No card-specific Linux runtime result published here |
 | Sonnet Breakaway Box 850 T5 | Powered Thunderbolt 5 eGPU enclosure | Vendor specifications only; no Linux card runtime result published here |
 | ACASIS TB501 Pro | Thunderbolt 5 M.2 NVMe enclosure | Storage enclosure, not a direct x16 GPU slot; any PCIe riser adaptation is unverified here |

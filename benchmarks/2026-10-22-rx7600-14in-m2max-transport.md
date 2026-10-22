@@ -1,4 +1,6 @@
-# RX 7600 on a 14-inch M2 Max MacBook Pro: transport record, 2026-10-22
+# RX 7600 on a 14-inch M2 Max MacBook Pro: 13:10Z transport snapshot, 2026-10-22
+
+Historical snapshot. Later boots assign the BARs and reach partial amdgpu initialization; see the [current host result](../hosts/m2-max/README.md). The observations below describe only the 13:10Z state.
 
 **This is not a performance benchmark.** No GPU driver was bound, no compute
 ran, and no throughput number exists. This page records what the PCI layer
