@@ -1,6 +1,6 @@
 # Arc Pro B60 on a 16-inch M1 Max MacBook Pro: llama.cpp Vulkan, 2026-10-23
 
-MEASURED: llama.cpp inference ran on the external card through Intel's ANV Vulkan driver. The kernel log from driver load to the end of the runs shows no error, fault, SError, DART, or timeout line. **All numbers on this page are single-CPU lower bounds:** this boot ran with 1 of the host's 10 CPUs online (stale spin-table addresses in the replacement device tree; see the limits section). A full-core rerun is pending.
+MEASURED: llama.cpp inference ran on the external card through Intel's ANV Vulkan driver. The kernel log from driver load to the end of the runs shows no error, fault, SError, DART, or timeout line. A follow-up run with all 10 CPUs online (stock device tree) is the current reference on Qwen2.5-7B Q4_K_M: pp512 1026.81 ± 3.40 / tg128 20.64 ± 0.06 with flash attention off, and 1057.67 ± 73.17 / 24.45 ± 0.13 with it on. Decode varies 20 to 25 percent run to run on this setup (other lanes' jobs co-ran), so the single-core 22.29 below sits inside that spread; the 10-core boot did not change decode beyond it. Prompt processing rose to 1026.81-1097.61.
 
 | Test | Tokens per second |
 |---|---:|
@@ -25,6 +25,21 @@ Three repetitions, mean ± standard deviation, all model layers on the card.
 | Power | Not recorded. Link under load: not recorded |
 | Conditions | Scheduled probe window; one short correctness check before the timed runs |
 
+
+## 10-CPU rerun, 2026-10-23
+
+Boot with the stock device tree: all 10 cores online. On this machine the 64-bit prefetchable window needed two runtime steps for the test, both applied from the hub's own bridges: a write of 1 to the tunnel root port's prefetchable-window enable register (`PORT_PREFMEM_ENABLE`, which read 0), and bridge/BAR bus addresses equal to CPU addresses (the stock tree maps PCI `0x8_00000000` to CPU `0x10_00000000`). Same command shape as below. Qwen2.5-7B Q4_K_M, other lanes' background jobs co-running:
+
+| Run | pp512 | tg128 |
+|---|---:|---:|
+| flash-attention off (headline) | 1026.81 ± 3.40 | 20.64 ± 0.06 |
+| flash-attention on (headline) | 1057.67 ± 73.17 | 24.45 ± 0.13 |
+| flash-attention off (second run) | 1097.61 ± 6.19 | 25.42 ± 0.46 |
+| flash-attention on (second run) | 985.72 ± 5.22 | 23.95 ± 0.03 |
+
+Larger models on the 24 GiB card (second run): Qwen2.5-14B Q4_K_M pp512 567.29 / tg128 14.80 (fa off; 566.53 / 14.51 on), and Qwen3-14B Q4_K_M 537.73 / 9.10 (535.37 / 9.12 on). Both fit entirely in VRAM. Qwen3-14B decodes slower than the same-size Qwen2.5; the cause is not isolated. A settings sweep on the single-core boot found the defaults and `-fa 1` best on this setup; disabling coopmat cost 32 percent of prompt processing and disabling f16 cost 57 percent.
+
+The 10-core boot did not lift decode beyond the 20-25 percent run-to-run spread, so as with the RX 7600, decode here is GPU- or driver-side, not CPU-limited; the extra cores lifted prompt processing.
 The correctness check at temperature 0 answered "The capital of France is Paris." at 91.7 t/s prompt and 10.1 t/s generation. `vulkaninfo --summary` reports `Intel(R) Arc(tm) Pro B60 Graphics (BMG G21)`, discrete, conformance 1.4.0.0, with 23.66 GiB device-local, 46.78 GiB system, and 256 MiB host-visible device-local heaps. `vkcube` did not run; no display was attached.
 
 ## Required workarounds, measured
@@ -36,8 +51,8 @@ The correctness check at temperature 0 answered "The capital of France is Paris.
 
 ## Limits
 
-One CPU online, shared with other work, so every number is a lower bound. Hot-plug is untested. The 32 GiB BAR resize is impossible on this tunnel. The patches are local; kernel pull-request cleanup is next. After a card hang the device wedges and needs a reboot.
+The first run used one CPU; the 10-CPU rerun above is the current reference, and decode did not move beyond its 20-25 percent run-to-run spread, so no number here is CPU-starved in a way that hides capacity - but that spread itself is unexplained. Hot-plug is untested. The 32 GiB BAR resize is impossible on this tunnel. The patches are local; kernel pull-request cleanup is next. After a card hang the device wedges and needs a reboot. The window workaround is re-applied after each boot until the kernel change lands.
 
 ## Not measured
 
-The matched macOS Metal baseline from the [method](method.md#matched-linux-vulkan-and-macos-metal-runs) has not run. Comparisons to the RX 7600 record are not valid until both cards have full-core reruns on the same conditions; on the same single-CPU conditions the RX 7600 read pp512 964.58 / tg128 31.07, so prompt processing matches and decode differs.
+The matched macOS Metal baseline from the [method](method.md#matched-linux-vulkan-and-macos-metal-runs) has not run. Cross-card comparison is still premature: decode on both the RX 7600 and this card is GPU- or driver-side and varies run to run, and the two records were taken under different co-load. On full-core boots the RX 7600 reads pp512 945.8-1097.6 and tg128 28.9-31.9; this card reads pp512 985.7-1097.6 and tg128 20.6-25.4.

@@ -2,8 +2,7 @@
 
 ASRock Arc Pro B60 Creator on Omarchy. Stock `xe` driver on x86; on Apple Silicon, local 16K-page patches plus placement rules.
 
-**Status 2026-10-23: MEASURED on the 16-inch M1 Max MacBook Pro.** With local xe patches, a Sonnet Breakaway Box, and ANV 26.2.4, llama.cpp Vulkan ran Qwen2.5-7B Q4_K_M on the card: pp512 968.87 ± 12.77, tg128 22.29 ± 0.40 t/s. Every number is a single-CPU lower bound (1 of 10 cores online; full-core rerun pending). Hot-plug is untested and the patches are not published. See the [benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md).
-
+**Status 2026-10-23: MEASURED on the 16-inch M1 Max MacBook Pro.** With local xe patches, a Sonnet Breakaway Box, and ANV 26.2.4, llama.cpp Vulkan ran on the card on a 10-CPU boot: Qwen2.5-7B Q4_K_M at pp512 1026.81 ± 3.40 / tg128 20.64 ± 0.06 (fa0) and 1057.67 ± 73.17 / 24.45 ± 0.13 (fa1); decode varies 20-25 percent run to run and is GPU- or driver-side. 14B models fit and run entirely in the 24 GiB VRAM. Hot-plug is untested and the patches are not published. See the [benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md).
 Other hosts: x86 remains the stock driver path and untested by us; the other Apple Silicon hosts have no B60 run; the M6 has no transport proof.
 
 - [setup.md](setup.md): card identity, power, the x86 recipe, the 16K page constraint, Apple Silicon blockers, failure signatures, firmware.
