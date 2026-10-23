@@ -34,7 +34,7 @@ The same small-operation cost appears on both cards this repo has measured, acro
 | RX 7600 (Navi 33), Llama-2-7B Q4_0 | RADV, 14-inch M2 Max, 12 CPUs | ~22 us per op in the perf log | 29.26 t/s, about 1/2 of the thread's native 58.03 | 1005.43, 86 percent of native 1167.20 |
 | Arc Pro B60 (BMG G21), Llama-2-7B Q4_0 | ANV, 16-inch M1 Max, 10 CPUs | ~23 us per dispatch | 14.39 t/s, about 1/4 of that same native reference | 974.84, at the tunnel RX 7600's level |
 
-The B60 row uses the thread's native RX 7600 as its only available native reference; no native Arc Pro B60 entry exists in that thread.
+The B60 row uses the thread's native RX 7600 as its native reference. Correction: the thread also has a native Arc Pro B60 Vulkan entry (68.55 tg128 at fa0, posted 2026-01-17), which this page missed when it was written. Against it, the 14.39 here is 21 percent. The [B60 record](2026-10-23-b60-m1max-llamacpp-vulkan.md#against-the-native-pcie-b60-in-the-public-thread) has the matched comparison after the driver-buffer change.
 
 Prompt processing hides per-operation latency because its operations are large; decode does not. Part of the small-op cost is now explained: RADV's shader arena lands in system memory behind the tunnel, and `RADV_PERFTEST=dmashaders` (which keeps shader code in VRAM) lifts decode +32 percent fa0 / +22.5 percent fa1 - see the headline record's dmashaders section and its window l section for the numbers, the measured buffer placement, and the remaining ~21 to 23 us tiny ops. The other refutations stand (queue round trips under 3 percent, barrier flavours flat at ~3 us, GFXOFF inside noise, descriptor cold fetch, tensor placement, CPU count). The link-latency numbers above remain measurements.
 

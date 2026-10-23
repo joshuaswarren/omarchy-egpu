@@ -22,6 +22,18 @@ git apply --check cards/arc-pro-b60/patches/000[1-4]-*.patch
 | `0003-xe-enable-experimental-16k-build.patch` | The Kconfig gate also accepts 16K host pages | `drivers/gpu/drm/xe/Kconfig` | GPL-2.0-only |
 | `0004-xe-step-migration-ptes-in-gpu-pages.patch` | The migration engine masks and steps in GPU-page units, and the page-table backing check accepts host-page-rounded backing | `xe_migrate.c` | MIT (Intel Corporation copyright headers) |
 
+## Private patches behind the 2026-10-23 decode result: not yet upstream
+
+The measured decode result in the [benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md#intel-driver-buffers-in-vram-2026-10-23) uses patches that are not in this directory and are not upstream:
+
+| Piece | What it does | Status |
+|---|---|---|
+| xe patches 0005 to 0014 | Non-posted VRAM mappings, buffer placement rules, and patch 0014: an opt-in `xe` GEM property (`0x4e50`) that keeps selected user buffers in VRAM | Private, not yet upstream; no pull request exists. 0014 SHA-256 `967e91a9c2ee9b47a40b95e50b156865093b148780335db8ae3fc0ca1d7f3384` |
+| ANV change (Mesa 26.2.4 build patch) | Sets that property for the shader heap and for selected state pools, chosen by `ANV_SHADER_HEAP_VRAM=1` and `ANV_NP_VRAM_POOLS`; CPU writes to those buffers use aligned stores only | Private, not yet upstream; no merge request exists. SHA-256 `d15848dd88753c1e8e39ca6806486b2fb8e5da7262fa333ff65806d115845572` |
+| Apple PCIe root-port change | Sets the prefetchable-window enable for cold-initialized tunnel ports | Private, not yet upstream; booted and measured on the 16-inch M1 Max |
+
+Nothing here should be read as a supported configuration. It was measured on one card on one host, and hot-plug is untested.
+
 ## Licensing
 
 Each patch carries a preamble naming its own `SPDX-License-Identifier`, the

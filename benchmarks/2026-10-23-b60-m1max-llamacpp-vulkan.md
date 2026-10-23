@@ -1,6 +1,6 @@
 # Arc Pro B60 on a 16-inch M1 Max MacBook Pro: llama.cpp Vulkan, 2026-10-23
 
-MEASURED: llama.cpp inference ran on the external card through Intel's ANV Vulkan driver. The kernel log from driver load to the end of the runs shows no error, fault, SError, DART, or timeout line. A follow-up run with all 10 CPUs online (stock device tree) is the current reference on Qwen2.5-7B Q4_K_M: pp512 1026.81 ± 3.40 / tg128 20.64 ± 0.06 with flash attention off, and 1057.67 ± 73.17 / 24.45 ± 0.13 with it on. Decode varies 20 to 25 percent run to run on this setup (other lanes' jobs co-ran), so the single-core 22.29 below sits inside that spread; the 10-core boot did not change decode beyond it. Prompt processing rose to 1026.81-1097.61.
+MEASURED: llama.cpp inference ran on the external card through Intel's ANV Vulkan driver. The kernel log from driver load to the end of the runs shows no error, fault, SError, DART, or timeout line. A follow-up run with all 10 CPUs online (stock device tree) is the current reference on Qwen2.5-7B Q4_K_M: pp512 1026.81 ± 3.40 / tg128 20.64 ± 0.06 with flash attention off, and 1057.67 ± 73.17 / 24.45 ± 0.13 with it on. Decode varies 20 to 25 percent run to run on this setup (other lanes' jobs co-ran), so the single-core 22.29 below sits inside that spread; the 10-core boot did not change decode beyond it. Prompt processing rose to 1026.81-1097.61. Later the same day, moving the Intel driver's CPU-written buffers into VRAM lifted Llama-2-7B Q4_0 decode on this card from 18.89 to 65.96 t/s (fa1); see [the section below](#intel-driver-buffers-in-vram-2026-10-23). Those results need private driver patches that are not upstream.
 
 | Test | Tokens per second |
 |---|---:|
@@ -46,6 +46,60 @@ The 10-core boot did not lift decode beyond the 20-25 percent run-to-run spread,
 The same-command Llama-2-7B Q4_0 run on this card (10 CPUs) read pp512 974.84 / tg128 14.39 (fa0) and 1001.76 / 17.63 (fa1), with a measured ~23 us per tiny dispatch. The RX 7600 on its tunnel reads ~22 us per small op. Two vendors, two drivers, two hosts: the shared per-operation cost is measured on both sides, and the barrier/fence/translation explanation is a hypothesis. See the [cross-vendor section](2026-10-23-rx7600-m2max-model-sweep.md#cross-vendor-small-op-cost-2026-10-23) of the RX 7600 sweep.
 The correctness check at temperature 0 answered "The capital of France is Paris." at 91.7 t/s prompt and 10.1 t/s generation. `vulkaninfo --summary` reports `Intel(R) Arc(tm) Pro B60 Graphics (BMG G21)`, discrete, conformance 1.4.0.0, with 23.66 GiB device-local, 46.78 GiB system, and 256 MiB host-visible device-local heaps. `vkcube` did not run; no display was attached.
 
+## Intel driver buffers in VRAM, 2026-10-23
+
+MEASURED on the same 16-inch M1 Max chain with all 10 CPUs online, kernel `7.1.12-2-20261013.18-egpu-ARCH` with local xe patches 0005 to 0014 and the local Apple PCIe change, and ANV from Mesa 26.2.4 with a private build patch. llama.cpp `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, Vulkan, Llama-2-7B Q4_0 (the model of the [llama.cpp Vulkan discussion](https://github.com/ggml-org/llama.cpp/discussions/10879)), `-ngl 100 -r 3`, `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1`, same boot for every row.
+
+The cause, and how each step was found. Our kernel patches place every user buffer the CPU maps in system memory, because CPU stores into the non-posted BAR fault. ANV keeps its shader code and several state pools in such buffers, so the GPU can only read them across the USB4 link. That placement is MEASURED by the speed change below; that instruction and state fetches over the link are the cost is INFERRED, and consistent with the [RX 7600 result](2026-10-22-rx7600-m2max-llamacpp-vulkan.md#window-l-shader-placement-measured-abab-and-a-proposed-fix-2026-10-23). A private ANV patch and an opt-in xe buffer property (patch 0014) let selected buffer classes stay in VRAM, written with aligned 64-bit and byte stores only.
+
+| Variant | fa1 pp512 | fa1 tg128 | fa0 pp512 | fa0 tg128 |
+|---|---:|---:|---:|---:|
+| xe 0013, no buffer change | 1031.13 ± 0.99 | 17.96 ± 0.06 | 1014.50 ± 4.70 | 14.74 ± 0.28 |
+| xe 0014, setting off | 1101.27 ± 1.12 | 18.89 ± 0.07 | 1036.42 ± 9.79 | 14.96 ± 0.04 |
+| shader code in VRAM (`ANV_SHADER_HEAP_VRAM=1`) | 1413.82 ± 2.98 | 45.80 ± 0.29 | 1347.79 ± 1.76 | 43.14 ± 0.29 |
+| shader code and five more buffer classes in VRAM | 1418.34 ± 8.55 | **65.96 ± 0.13** | 1330.26 ± 9.43 | **63.80 ± 0.03** |
+
+Decode rises 3.5 times at fa1 (18.89 to 65.96) and 4.3 times at fa0 (14.96 to 63.80). Shader code alone gives 2.4 times (fa1). Prompt processing rises 29 percent at fa1 and 28 percent at fa0 against the setting-off row.
+
+One buffer class at a time on top of the shader code (Llama-2-7B Q4_0, fa1, decode only, `-n 128`, n=2):
+
+| Extra buffer class in VRAM | tg128 |
+|---|---:|
+| none (shader code only) | 45.82 ± 0.11 |
+| binding tables | 47.50 ± 0.06 |
+| bindless surface states | 46.11 ± 0.07 |
+| general state | 48.91 ± 0.09 |
+| indirect push descriptors | 46.16 ± 0.12 |
+| **descriptor sets** | **56.12 ± 0.03** |
+| internal surface states | bus error (INFERRED: its CPU writes are not alignment-safe) |
+| dynamic state | bus error (same) |
+
+The five non-crashing classes together, with the shader code, are the last row of the first table. They are selected with `ANV_SHADER_HEAP_VRAM=1` and `ANV_NP_VRAM_POOLS="descriptor-bo;general pool;binding table pool;bindless surface state pool;indirect push descriptor pool"`. llama.cpp still needs `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1`.
+
+Other models with the same buffer set (`-ngl 99`, `-p 512 -n 128 -r 3`, 10 CPUs):
+
+| Model | fa1 pp512 | fa1 tg128 | fa0 pp512 | fa0 tg128 |
+|---|---:|---:|---:|---:|
+| Qwen3-1.7B Q4_K_M | 3121.85 ± 49.22 | 99.75 ± 0.41 | 3031.92 ± 110.45 | 100.62 ± 0.50 |
+| Qwen2.5-7B-Instruct Q4_K_M | 1439.92 ± 9.53 | 55.88 ± 0.08 | 1429.87 ± 19.51 | 55.78 ± 0.01 |
+| Qwen3-8B Q4_K_M | 1191.06 ± 4.79 | 46.90 ± 0.02 | 1210.15 ± 4.66 | 46.89 ± 0.04 |
+| Qwen2.5-14B-Instruct Q4_K_M | 716.65 ± 133.13 (one noisy repetition) | 31.47 ± 0.02 | 817.65 ± 4.34 | 31.48 ± 0.05 |
+| Qwen2.5-32B-Instruct Q4_K_M (18.5 GiB) | 423.19 ± 0.35 | 15.81 ± 0.01 | 434.29 ± 0.77 | 15.79 ± 0.01 |
+
+The temperature-0 check on Qwen2.5-7B answered "The capital of France is Paris." No kernel error, fault or timeout line appeared in any run.
+
+### Against the native-PCIe B60 in the public thread
+
+The thread has a native Arc Pro B60 Vulkan entry: [a comment from 2026-01-17](https://github.com/ggml-org/llama.cpp/discussions/10879#discussioncomment-15523099), the B60 as the second GPU in an x86 PC beside an RTX 4070 Ti, Mesa 25.1.5, llama.cpp build `516a4ca`, Llama-2-7B Q4_0, `-ngl 100`. It reads pp512 522.36 ± 3.60 / tg128 68.55 ± 0.01 with flash attention off and pp512 274.76 ± 0.27 / tg128 70.54 ± 0.03 with it on.
+
+Matched on flash attention, decode here is 63.80 / 68.55 = 93 percent (fa0) and 65.96 / 70.54 = 94 percent (fa1) of that native entry. Prompt processing here is 2.5 times (fa0) and 5.2 times (fa1) the thread's values. The comparison is indicative, not like for like: a different llama.cpp commit, Mesa version, host CPU and driver stack, and the thread's run had a second GPU in the machine.
+
+Before this change the same card decoded this model at 14.96 (fa0) and 18.89 t/s (fa1), 22 percent and 27 percent of the thread's native values at matched flash attention.
+
+### Not done and not upstream
+
+The remaining driver buffers (internal surface states, dynamic state, batch buffers) are still in system memory; the two crashing classes need alignment-safe CPU writes. Hot-plug is untested. The xe patches 0005 to 0014 and the ANV change are private patches, not yet upstream, and no merge request or pull request for them exists. The xe 0014 patch SHA-256 is `967e91a9c2ee9b47a40b95e50b156865093b148780335db8ae3fc0ca1d7f3384`; the ANV patch is `d15848dd88753c1e8e39ca6806486b2fb8e5da7262fa333ff65806d115845572`.
+
 ## Required workarounds, measured
 
 - `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1` is required. Without it, llama.cpp's host-visible device-local buffers land in system memory here and a small-model run fell from pp128 573.41 / tg32 16.50 to pp128 6.8 / tg32 1.9 t/s.
@@ -59,4 +113,4 @@ The first run used one CPU; the 10-CPU rerun above is the current reference, and
 
 ## Not measured
 
-The matched macOS Metal baseline from the [method](method.md#matched-linux-vulkan-and-macos-metal-runs) has not run. Cross-card comparison is still premature: decode on both the RX 7600 and this card is GPU- or driver-side and varies run to run, and the two records were taken under different co-load. On full-core boots the RX 7600 reads pp512 945.8-1097.6 and tg128 28.9-31.9; this card reads pp512 985.7-1097.6 and tg128 20.6-25.4.
+The matched macOS Metal baseline from the [method](method.md#matched-linux-vulkan-and-macos-metal-runs) has not run. Cross-card comparison is still premature: decode on both the RX 7600 and this card is GPU- or driver-side and varies run to run, and the two records were taken under different co-load. On full-core boots the RX 7600 reads pp512 945.8-1097.6 and tg128 28.9-31.9; this card read pp512 985.7-1097.6 and tg128 20.6-25.4 on Qwen2.5-7B before the driver-buffer change above; with it the same model reads tg128 55.8-55.9.
