@@ -113,9 +113,20 @@ The run used the same 16-inch M1 Max chain with 10 CPUs online, llama.cpp commit
 
 Five repetitions per cell, mean ± standard deviation, from `llama-bench`. The system log showed no xe timeout, wedge or error lines after the runs.
 
+A second file of the same model, unsloth `Qwen3.8-27B-Q4_0.gguf` (plain Q4_0, 16,056,478,688 bytes, 14.94 GiB, SHA-256 `ede16c7b36e578ca87a8c70e011e4b4633a32c831c0ce76d0f474582384e671d`, equal to the Hugging Face LFS object id), ran on the same setup, boot, build and method, one hour later. It also loads fully on the card: 66 of 66 layers, a 14367.22 MiB Vulkan model buffer, the same 512 MiB KV buffer, 149.62 MiB recurrent state and 150.02 MiB compute buffer, and free card memory fell from 21573 MiB to 8021 MiB. The temperature-0 answer to "The capital of France is" was "Paris". The system log showed no xe timeout, wedge or error lines.
+
+| File | Size | Flash attention | pp512 t/s | tg128 t/s |
+|---|---:|---:|---:|---:|
+| UD-Q4_K_M | 15.32 GiB | 1 | 442.61 ± 0.22 | 13.12 ± 0.00 |
+| UD-Q4_K_M | 15.32 GiB | 0 | 450.55 ± 0.70 | 13.12 ± 0.01 |
+| Q4_0 | 14.94 GiB | 1 | 428.04 ± 0.86 | 17.28 ± 0.01 |
+| Q4_0 | 14.94 GiB | 0 | 432.70 ± 1.70 | 17.32 ± 0.01 |
+
+Plain Q4_0 decodes about 32 percent faster than UD-Q4_K_M (17.28 against 13.12 at flash attention 1) and prompt processing is about 3 percent slower. The per-op breakdown below was measured on the UD-Q4_K_M file only. The Q4_0 gain fits that explanation (a uniform quantization avoids the slow `iq4_xs` kernels) but I did not run the per-op logger on the Q4_0 file, so that part is INFERRED.
+
 Load proof with `-ngl 99 -c 8192`: `offloaded 66/66 layers to GPU`. The Vulkan model buffer is 14674.45 MiB. The 682.03 MiB token-embedding table stays in host memory because llama.cpp keeps it there by design. The KV buffer is 512 MiB, the recurrent-state buffer is 149.62 MiB and the compute buffer is 150.02 MiB, all on the card. Free card memory fell from 21575 MiB to 7712 MiB of 24480 MiB. A temperature-0 run completed. It started in thinking mode and answered the prompt "The capital of France is" with "Answer Paris." The generation rate in that run includes warm-up and is not a benchmark.
 
-Why decode is 13 t/s. MEASURED with the llama.cpp Vulkan per-op logger on a 32-token decode: the GPU kernels take 72.9 ms of each 76.2 ms token, so about 96 percent of decode time is inside GPU kernels. This file mixes quantization types. The `q4_K` matrix-vector kernel for one shape runs near 375 GB/s, while the `iq4_xs` kernel for the same shape runs near 165 GB/s. The 61 `iq4_xs` calls per token cost 17.5 ms. The low rate comes from the file's quantization mix and the Vulkan shaders. INFERRED, not measured: a native PCIe slot would give the same rate, because the time is spent inside the GPU kernels.
+Why UD-Q4_K_M decode is 13 t/s. MEASURED with the llama.cpp Vulkan per-op logger on a 32-token decode: the GPU kernels take 72.9 ms of each 76.2 ms token, so about 96 percent of decode time is inside GPU kernels. This file mixes quantization types. The `q4_K` matrix-vector kernel for one shape runs near 375 GB/s, while the `iq4_xs` kernel for the same shape runs near 165 GB/s. The 61 `iq4_xs` calls per token cost 17.5 ms. The low rate comes from the file's quantization mix and the Vulkan shaders. INFERRED, not measured: a native PCIe slot would give the same rate, because the time is spent inside the GPU kernels.
 
 There is no native-PCIe reference for this model. No machine here has the card in a native slot, and the public llama.cpp thread has only a Llama-2-7B Q4_0 entry. No percent-of-native is given for this 27B result.
 
