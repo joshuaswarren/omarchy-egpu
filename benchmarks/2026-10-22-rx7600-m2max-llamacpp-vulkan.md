@@ -34,7 +34,7 @@ The driver build and the device-tree change are local and unpublished. Do not ex
 
 ## Later clean-module run
 
-With the patch series cleaned for [PR #184](https://github.com/omacom/linux-aurora/pull/184) (later closed without merging), the same host and model measured pp512 `967.77 ± 1.09` and tg128 `31.65 ± 0.03` (3 repetitions, 1 CPU online; the high end of the 28.9-31.9 boot range). The kernel log stayed clean. A variant sweep moved decode barely: default DPM 31.70 ± 0.02, forced high 31.17 ± 0.06, `RADV_PERFTEST=nogttspill` 31.48 ± 0.37. During runs the GPU sat at ~98% busy with the CPU blocked in `drmSyncobjWait` in 33 of 34 stack samples: the workload is GPU-bound, and clock or RADV-spill settings are not the decode limiter.
+With the patch series cleaned for [PR #188](https://github.com/omacom/linux-aurora/pull/188), the same host and model measured pp512 `967.77 ± 1.09` and tg128 `31.65 ± 0.03` (3 repetitions, 1 CPU online; the high end of the 28.9-31.9 boot range). The kernel log stayed clean. A variant sweep moved decode barely: default DPM 31.70 ± 0.02, forced high 31.17 ± 0.06, `RADV_PERFTEST=nogttspill` 31.48 ± 0.37. During runs the GPU sat at ~98% busy with the CPU blocked in `drmSyncobjWait` in 33 of 34 stack samples: the workload is GPU-bound, and clock or RADV-spill settings are not the decode limiter.
 
 ## 12-CPU rerun, 2026-10-23
 
@@ -103,7 +103,7 @@ An upstream Mesa change would make the existing `dmashaders` behaviour the defau
 
 The patched build reproduces the environment switch within 0.1 t/s. Decode is +25 to +31 percent at fa0 and +19 to +24 percent at fa1 (the low end is +18.5). The perf logger on the patched build, with no switch, shows ROPE and SET_ROWS at about 21 us per operation (32 each per token).
 
-Whether the condition fires on another host was read from the source, not tested: `vram_vis_size_kb` comes from the kernel's CPU-accessible VRAM size, which the kernel patch in [PR #184](https://github.com/omacom/linux-aurora/pull/184) reports as zero on non-posted hosts (read from that patch). No other GPU or host was tried, and no test suite beyond llama.cpp ran.
+Whether the condition fires on another host was read from the source, not tested: `vram_vis_size_kb` comes from the kernel's CPU-accessible VRAM size, which the kernel patch in [PR #188](https://github.com/omacom/linux-aurora/pull/188) reports as zero on non-posted hosts (read from that patch). No other GPU or host was tried, and no test suite beyond llama.cpp ran.
 
 ### What is left of the gap
 
