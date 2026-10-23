@@ -51,14 +51,19 @@ In our runs, yes. The Qwen3.8-27B Q4_0 run reported `offloaded 66/66 layers to G
 
 ### When does the card beat the Mac's own GPU?
 
-We have not measured the built-in GPU of either Mac. The matched macOS Metal baseline in the [method](benchmarks/method.md) has not been run. The table sets our card numbers beside the public llama.cpp [Apple Silicon thread](https://github.com/ggml-org/llama.cpp/discussions/4167), which lists Llama-2-7B Q4_0 for each chip at two GPU core counts. Our receipts do not record our Macs' core counts, so both thread values are shown. The thread used a different llama.cpp commit, did not state a flash attention setting for these rows, and did not run on our machines. Read the table as a rough guide and not as a matched ratio.
+It depends on what you measure. On the 14-inch M2 Max we ran llama.cpp on the Mac's own GPU and on the RX 7600, with the same llama.cpp build and the same Llama-2-7B Q4_0 file. Prompt processing was about 3.5 to 4.1 times faster on the card. Decode was a tie. The built-in run used the Mesa Honeykrisp Vulkan driver on Linux, not Metal. The matched macOS Metal baseline in the [method](benchmarks/method.md) has not been run. The table also shows the public llama.cpp [Apple Silicon thread](https://github.com/ggml-org/llama.cpp/discussions/4167), which lists Metal results for each chip at two GPU core counts. Our receipts do not record our Macs' core counts, so both thread values are shown. The thread used a different llama.cpp commit, did not state a flash attention setting for these rows, and did not run on our machines.
 
-| Mac and card | Our built-in GPU run | Thread built-in GPU, pp512 / tg128 | Card over USB4, pp512 / tg128 |
+| Mac and card | Model | Built-in GPU on Linux, pp512 / tg128 | Card over USB4, pp512 / tg128 |
 |---|---|---|---|
-| 14-inch M2 Max with RX 7600 | not measured | 537.60 / 60.99 (30 cores), 671.31 / 65.95 (38 cores) | 1024.5 to 1025.1 / 38.15 to 38.18 (fa0), 1242.3 to 1259.4 / 40.95 to 41.07 (fa1) |
-| 16-inch M1 Max with Arc Pro B60 | not measured | 400.26 / 54.61 (24 cores), 530.06 / 61.19 (32 cores) | 1330.26 / 63.80 (fa0), 1418.34 / 65.96 (fa1) |
+| 14-inch M2 Max, RX 7600 | Llama-2-7B Q4_0, fa0 | 293.96 / 38.64 | 1024.5 to 1025.1 / 38.15 to 38.18 |
+| 14-inch M2 Max, RX 7600 | Llama-2-7B Q4_0, fa1 | 304.05 / 40.44 | 1242.3 to 1259.4 / 40.95 to 41.07 |
+| 14-inch M2 Max, RX 7600 | Qwen2.5-7B Q4_K_M, fa0 | 245.74 / 29.82 | 945.81 / 28.93 (repeats 29.57, 29.49) |
+| 14-inch M2 Max, RX 7600 | Qwen2.5-7B Q4_K_M, fa1 | 240.91 / 30.35 | 967.59 / 28.90 (repeats 31.86, 31.39) |
+| 16-inch M1 Max, Arc Pro B60 | Llama-2-7B Q4_0 | not measured | fa0 1330.26 / 63.80, fa1 1418.34 / 65.96 |
 
-On these numbers the card is faster at prompt processing on both Macs. For decode, the B60 is above the thread's M1 Max values, and the RX 7600 is well below the thread's M2 Max values. The RX 7600 decode uses the `dmashaders` setting from the [headline record](benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md). The B60 decode uses private driver patches that are not upstream, from the [B60 record](benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md). Larger models are where a 24 GiB card can matter most, but we have no built-in-GPU number for them either.
+The built-in rows are five repetitions each, from one run of llama.cpp commit `65840ed53`, with Mesa 26.2.4. The RX 7600 rows are three repetitions with Mesa 26.2.5 RADV. The Llama-2 rows use the `dmashaders` setting from the [headline record](benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md). The Qwen2.5 card rows are the 12-CPU rerun, first run of each setting, with the later repeats in brackets. Decode on that model moved between 28.9 and 31.9 t/s from run to run, so it overlaps the built-in 29.8 to 30.4. The Qwen2.5 file name is the same on both. The Llama-2 file was staged at SHA-256 `78b8f977...` for the card runs and the built-in run used that same hash, though the card run logs do not repeat it.
+
+For reference, the thread's Metal values for the same Llama-2-7B Q4_0 are pp512 537.60 and tg128 60.99 on an M2 Max with 30 GPU cores, and 671.31 and 65.95 with 38 cores. For the M1 Max they are 400.26 and 54.61 with 24 cores, and 530.06 and 61.19 with 32 cores. Against those values the B60 decodes faster than the thread's M1 Max rows, and the RX 7600 decodes well below the thread's M2 Max rows. We have no built-in-GPU run on the M1 Max yet. The B60 decode uses private driver patches that are not upstream, from the [B60 record](benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md). Larger models are where a 24 GiB card should matter most. We have no built-in-GPU number for those either.
 
 ## Cards
 
