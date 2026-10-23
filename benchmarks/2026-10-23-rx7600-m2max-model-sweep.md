@@ -24,3 +24,16 @@ A Vulkan compute probe (`vkchase`) on the same host measured the two memory path
 | Dependent tiny dispatch, barrier between (64 threads) | 3.08 us/dispatch | 6.02 us/dispatch |
 
 Every buffer a GPU dispatch touches in GTT instead of VRAM costs about 3 us on this chain, and llama.cpp decode issues several hundred dependent dispatches per token, so GTT placement of RADV's upload/descriptor/indirect buffers was a candidate explanation for the decode gap to native PCIe. It is **refuted as a cold-fetch mechanism**: a descriptor-set sweep (1 to 5000 distinct sets) reads the same ~6.5 us per dispatch at every count, and a buffer audit shows weights, KV, and compute buffers all in VRAM with nothing per-token behind the tunnel. The CPU theory is also refuted (thread and core test above). The open question is why small operations run 5x slower here than in `test-backend-ops`; see the headline record's refuted-causes list. The link-latency numbers above remain measurements.
+
+## Cross-vendor small-op cost, 2026-10-23
+
+The same small-operation cost appears on both cards this repo has measured, across two vendors, two Mac kernels, and two Vulkan drivers. MEASURED on both sides:
+
+| Card and model | Driver, host | Small op | Decode (tg128 fa0) | Prompt processing |
+|---|---|---:|---|---|
+| RX 7600 (Navi 33), Llama-2-7B Q4_0 | RADV, 14-inch M2 Max, 12 CPUs | ~22 us per op in the perf log | 29.26 t/s, about 1/2 of the thread's native 58.03 | 1005.43, 86 percent of native 1167.20 |
+| Arc Pro B60 (BMG G21), Llama-2-7B Q4_0 | ANV, 16-inch M1 Max, 10 CPUs | ~23 us per dispatch | 14.39 t/s, about 1/4 of that same native reference | 974.84, at the tunnel RX 7600's level |
+
+The B60 row uses the thread's native RX 7600 as its only available native reference; no native Arc Pro B60 entry exists in that thread.
+
+Prompt processing hides per-operation latency because its operations are large; decode does not. So the per-operation cost is not specific to RADV (the earlier RADV prototype idea stays dropped), not in one card's firmware, and not explained by the refuted causes above (descriptor cold fetch, tensor placement, CPU count, clocks). HYPOTHESIS for what remains: something every dispatch does that crosses the link or the host side - the buffer memory barriers between operations, per-submit fence waits, or GPU access to system memory that crosses the host's address translation. A follow-up probe extends the latency chain with buffer barriers per dispatch, matching the application's synchronization; if tiny-op cost jumps from 3-6 us to about 22 us, the barrier implementation is the cause.

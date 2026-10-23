@@ -40,6 +40,10 @@ Boot with the stock device tree: all 10 cores online. On this machine the 64-bit
 Larger models on the 24 GiB card (second run): Qwen2.5-14B Q4_K_M pp512 567.29 / tg128 14.80 (fa off; 566.53 / 14.51 on), and Qwen3-14B Q4_K_M 537.73 / 9.10 (535.37 / 9.12 on). Both fit entirely in VRAM. Qwen3-14B decodes slower than the same-size Qwen2.5; the cause is not isolated. A settings sweep on the single-core boot found the defaults and `-fa 1` best on this setup; disabling coopmat cost 32 percent of prompt processing and disabling f16 cost 57 percent.
 
 The 10-core boot did not lift decode beyond the 20-25 percent run-to-run spread, so as with the RX 7600, decode here is GPU- or driver-side, not CPU-limited; the extra cores lifted prompt processing.
+
+## Cross-vendor small-op cost
+
+The same-command Llama-2-7B Q4_0 run on this card (10 CPUs) read pp512 974.84 / tg128 14.39 (fa0) and 1001.76 / 17.63 (fa1), with a measured ~23 us per tiny dispatch. The RX 7600 on its tunnel reads ~22 us per small op. Two vendors, two drivers, two hosts: the shared per-operation cost is measured on both sides, and the barrier/fence/translation explanation is a hypothesis. See the [cross-vendor section](2026-10-23-rx7600-m2max-model-sweep.md#cross-vendor-small-op-cost-2026-10-23) of the RX 7600 sweep.
 The correctness check at temperature 0 answered "The capital of France is Paris." at 91.7 t/s prompt and 10.1 t/s generation. `vulkaninfo --summary` reports `Intel(R) Arc(tm) Pro B60 Graphics (BMG G21)`, discrete, conformance 1.4.0.0, with 23.66 GiB device-local, 46.78 GiB system, and 256 MiB host-visible device-local heaps. `vkcube` did not run; no display was attached.
 
 ## Required workarounds, measured
