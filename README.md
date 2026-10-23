@@ -35,6 +35,31 @@ This matrix separates evidence stages. `MEASURED` names an actual runtime observ
 
 Evidence cutoff: 2026-10-23 for the RX 7600 and Arc Pro B60 rows, 2026-10-22 for the others. The shared NVIDIA build targets kernel `7.1.12-2-20261013.18-sep-ARCH`, source `6f63677751854d57bcfac172314957bc2197c05f`. It is not proof that a module was installed or loaded. AMD and Intel build details belong in their card guides; the matrix reports runtime readiness.
 
+## FAQ
+
+### How is this different from tinygrad's TinyGPU?
+
+TinyGPU is a macOS app that installs a driver extension. Its [documentation](https://github.com/tinygrad/tinygrad/blob/master/docs/tinygpu.md) says it lets tinygrad use AMD RDNA3 and newer and NVIDIA Ampere and newer cards over USB4 on macOS. This project boots Linux on the Mac and uses the kernel's own `amdgpu` and `xe` drivers with Mesa Vulkan. Any Vulkan program can then use the card. llama.cpp is the one we measured, and it ran on both an AMD and an Intel card. We have not run TinyGPU and make no speed comparison with it.
+
+### Is this a virtual machine?
+
+No. Linux boots directly on the Mac hardware through the m1n1 boot chain, and the USB4 tunnel to the card is handled by the Linux Apple PCIe driver. The [M2 Max host page](hosts/m2-max/README.md) and the [headline record](benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md) describe the boot chain and the 12-CPU result.
+
+### Does the whole model sit on the card?
+
+In our runs, yes. The Qwen3.8-27B Q4_0 run reported `offloaded 66/66 layers to GPU` with a 14367.22 MiB model buffer on the card, and free card memory fell from 21573 MiB to 8021 MiB. One small table of 682.03 MiB stays in host memory because llama.cpp keeps the token embeddings there. No layers were split between the card and the Mac's unified memory. See the [B60 record](benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md#qwen38-27b-fully-on-the-card-2026-10-23).
+
+### When does the card beat the Mac's own GPU?
+
+We have not measured the built-in GPU of either Mac. The matched macOS Metal baseline in the [method](benchmarks/method.md) has not been run. The table sets our card numbers beside the public llama.cpp [Apple Silicon thread](https://github.com/ggml-org/llama.cpp/discussions/4167), which lists Llama-2-7B Q4_0 for each chip at two GPU core counts. Our receipts do not record our Macs' core counts, so both thread values are shown. The thread used a different llama.cpp commit, did not state a flash attention setting for these rows, and did not run on our machines. Read the table as a rough guide and not as a matched ratio.
+
+| Mac and card | Our built-in GPU run | Thread built-in GPU, pp512 / tg128 | Card over USB4, pp512 / tg128 |
+|---|---|---|---|
+| 14-inch M2 Max with RX 7600 | not measured | 537.60 / 60.99 (30 cores), 671.31 / 65.95 (38 cores) | 1024.5 to 1025.1 / 38.15 to 38.18 (fa0), 1242.3 to 1259.4 / 40.95 to 41.07 (fa1) |
+| 16-inch M1 Max with Arc Pro B60 | not measured | 400.26 / 54.61 (24 cores), 530.06 / 61.19 (32 cores) | 1330.26 / 63.80 (fa0), 1418.34 / 65.96 (fa1) |
+
+On these numbers the card is faster at prompt processing on both Macs. For decode, the B60 is above the thread's M1 Max values, and the RX 7600 is well below the thread's M2 Max values. The RX 7600 decode uses the `dmashaders` setting from the [headline record](benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md). The B60 decode uses private driver patches that are not upstream, from the [B60 record](benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md). Larger models are where a 24 GiB card can matter most, but we have no built-in-GPU number for them either.
+
 ## Cards
 
 | Card | Guide | First Linux route | Other recipes |
