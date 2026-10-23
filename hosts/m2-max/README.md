@@ -37,7 +37,7 @@ The earlier MES KIQ ring timeout disappeared once the 64-bit window worked. Door
 
 ## Not done
 
-Cable hot-plug needs a person at the dock. The 8 GiB BAR resize is unresolved. A display or cube run and the matched macOS Metal baseline from the [method](../../benchmarks/method.md) remain unrun. The identity window fix ships as DTS changes in [PR #184](https://github.com/omacom/linux-aurora/pull/184); the working boot chain carries that rule in its own device trees. No saved-DTB shortcut exists on this platform.
+Cable hot-plug needs a person at the dock. The 8 GiB BAR resize is unresolved. A display or cube run and the matched macOS Metal baseline from the [method](../../benchmarks/method.md) remain unrun. The identity window fix was posted as DTS changes in [PR #184](https://github.com/omacom/linux-aurora/pull/184), which was closed without merging on 2026-10-23; the working boot chain carries that rule in its own device trees. No saved-DTB shortcut exists on this platform.
 
 ## Historical hot-plug bus-range clipping
 
