@@ -100,6 +100,25 @@ Before this change the same card decoded this model at 14.96 (fa0) and 18.89 t/s
 
 The remaining driver buffers (internal surface states, dynamic state, batch buffers) are still in system memory; the two crashing classes need alignment-safe CPU writes. Hot-plug is untested. The xe patches 0005 to 0014 and the ANV change are private patches, not yet upstream, and no merge request or pull request for them exists. The xe 0014 patch SHA-256 is `967e91a9c2ee9b47a40b95e50b156865093b148780335db8ae3fc0ca1d7f3384`; the ANV patch is `d15848dd88753c1e8e39ca6806486b2fb8e5da7262fa333ff65806d115845572`.
 
+## Qwen3.8-27B fully on the card, 2026-10-23
+
+MEASURED. Qwen3.8-27B (unsloth `Qwen3.8-27B-UD-Q4_K_M.gguf`, base model Qwen/Qwen3.8-27B, Apache-2.0) runs with all 66 layers on the B60. The file is 16,464,440,224 bytes (15.32 GiB), SHA-256 `322e194ff79741c7baa497c240f677f54b201b0efab44ca8e50f122b39123482`, and the hash equals the Hugging Face LFS object id. The architecture is `qwen35`.
+
+The run used the same 16-inch M1 Max chain with 10 CPUs online, llama.cpp commit `65840ed53c8653bfbf3e9014d9cbf71ac8c08725` (Vulkan), `-ngl 99`, `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1`, and the private ANV build with the same five descriptor and state pools in VRAM. The kernel carried the Apple PCIe prefetchable-window commit. This run used a later private `xe` build than the 7B runs above (call it 0015; those used 0014). It keeps the same buffers in VRAM and keeps the GPU page tables and the firmware scheduler buffer there too. It is private and not upstream. The xe 0015 module SHA-256 is `69424489ef836487633bf941812e674d9c02d9658d37a47a98b77046748f8722`.
+
+| Flash attention | pp512 t/s | tg128 t/s |
+|---|---:|---:|
+| 1 | 442.61 ± 0.22 | 13.12 ± 0.00 |
+| 0 | 450.55 ± 0.70 | 13.12 ± 0.01 |
+
+Five repetitions per cell, mean ± standard deviation, from `llama-bench`. The system log showed no xe timeout, wedge or error lines after the runs.
+
+Load proof with `-ngl 99 -c 8192`: `offloaded 66/66 layers to GPU`. The Vulkan model buffer is 14674.45 MiB. The 682.03 MiB token-embedding table stays in host memory because llama.cpp keeps it there by design. The KV buffer is 512 MiB, the recurrent-state buffer is 149.62 MiB and the compute buffer is 150.02 MiB, all on the card. Free card memory fell from 21575 MiB to 7712 MiB of 24480 MiB. A temperature-0 run completed. It started in thinking mode and answered the prompt "The capital of France is" with "Answer Paris." The generation rate in that run includes warm-up and is not a benchmark.
+
+Why decode is 13 t/s. MEASURED with the llama.cpp Vulkan per-op logger on a 32-token decode: the GPU kernels take 72.9 ms of each 76.2 ms token, so about 96 percent of decode time is inside GPU kernels. This file mixes quantization types. The `q4_K` matrix-vector kernel for one shape runs near 375 GB/s, while the `iq4_xs` kernel for the same shape runs near 165 GB/s. The 61 `iq4_xs` calls per token cost 17.5 ms. The low rate comes from the file's quantization mix and the Vulkan shaders. INFERRED, not measured: a native PCIe slot would give the same rate, because the time is spent inside the GPU kernels.
+
+There is no native-PCIe reference for this model. No machine here has the card in a native slot, and the public llama.cpp thread has only a Llama-2-7B Q4_0 entry. No percent-of-native is given for this 27B result.
+
 ## Required workarounds, measured
 
 - `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1` is required. Without it, llama.cpp's host-visible device-local buffers land in system memory here and a small-model run fell from pp128 573.41 / tg32 16.50 to pp128 6.8 / tg32 1.9 t/s.
