@@ -9,7 +9,7 @@ available yet.
 
 | Stack | x86 Omarchy host | Apple Silicon Omarchy host | Notes |
 |---|---|---|---|
-| llama.cpp (Vulkan, RADV) | Applicable; untested on this card by us | **MEASURED on the M2 Max:** pp512 964.58 ± 0.29, tg128 31.07 ± 0.01 t/s, Qwen2.5-7B Q4_K_M; single-CPU lower bounds | [Benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md); requires the unpublished driver and device-tree fix |
+| llama.cpp (Vulkan, RADV) | Applicable; untested on this card by us | **MEASURED on the M2 Max:** pp512 945.81-967.59, tg128 28.90-28.93 (12-CPU rerun; 28.9-31.9 across boots), Qwen2.5-7B Q4_K_M | [Benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md); requires the unpublished driver and device-tree fix |
 | Ollama (ROCm) | Supported upstream: RX 7600 is in the official Linux ROCm list (ROCm v7 driver) | **Blocked**: ROCm is not packaged for aarch64 Linux | [Ollama GPU docs](https://docs.ollama.com/gpu) |
 | Ollama (Vulkan backend) | Available as an additional backend | Untested on aarch64 | Vulkan is enabled by default when the backend is installed; `OLLAMA_VULKAN=0` disables |
 | vLLM | ROCm builds target x86_64 servers; consumer RDNA3 is not the supported vLLM target | **Blocked** (aarch64 + ROCm) | Use llama.cpp or Ollama on this card |
