@@ -47,6 +47,16 @@ bind a driver. Current driver status is in [patches.md](patches.md).
 On x86 Omarchy the kernel already carries amdgpu; the firmware and Vulkan
 package lines are the same.
 
+## Decode environment setting (Apple Silicon eGPU hosts)
+
+Once the driver is running, export this before any llama.cpp Vulkan run:
+
+```bash
+export RADV_PERFTEST=nogttspill,dmashaders
+```
+
+Measured on the 14-inch M2 Max: decode +32 percent (fa0) and +22.5 percent (fa1) on Llama-2-7B Q4_0, prompt processing unchanged (see the [benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md)). The reason, read from the Mesa source and not yet confirmed by a second experiment: the driver's shader code otherwise lands in system memory behind the tunnel, where every instruction-cache miss pays tunnel latency.
+
 ## Card and host constraints (Apple Silicon)
 
 Measured and source-read facts that decide what this card can do behind the
