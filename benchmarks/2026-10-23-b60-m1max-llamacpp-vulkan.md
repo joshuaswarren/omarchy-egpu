@@ -128,6 +128,17 @@ Load proof with `-ngl 99 -c 8192`: `offloaded 66/66 layers to GPU`. The Vulkan m
 
 MEASURED on the Q4_0 file at flash attention 1, three repetitions, same build: the descriptor and state pools matter as much for this model as for the 7B. With only the shader heap in VRAM, `llama-bench` gives pp512 416.17 ± 0.59 and tg128 11.97 ± 0.02 t/s. With the shader heap and the five descriptor and state pools in VRAM, it gives pp512 427.73 ± 0.85 and tg128 17.27 ± 0.01 t/s, which is 44 percent faster decode. With the five pools and 4096 tokens already in the cache, pp2048 is 276.04 ± 0.45 and tg128 is 16.84 ± 0.01 t/s. The system log showed no xe error lines. An unrelated job ran on the Mac's built-in chips during these runs (load average 2.3). The run's console output was not saved as a file, so these three figures rest on the test script and its printed summary, not on a stored log. The five-pool run reproduces the n=5 headline above (17.28).
 
+Decode at depth. MEASURED on the Q4_0 file with the five-pool set, flash attention 1, three repetitions, same build, using `llama-bench -d N` so that N tokens are already in the cache:
+
+| Tokens already cached | Prompt t/s (512 tokens) | tg128 t/s |
+|---:|---:|---:|
+| 0 | 427.73 ± 0.85 | 17.27 ± 0.01 |
+| 8192 | 217.91 ± 2.24 | 16.39 ± 0.01 |
+| 16384 | 144.27 ± 2.19 | 15.69 ± 0.03 |
+| 32768 | 84.80 ± 1.16 | 14.45 ± 0.02 |
+
+The 4096-token run above used a 2048-token prompt, so it is not a row in this table. Decode at 32768 tokens of context keeps 84 percent of the empty-cache rate (14.45 against 17.27). Prompt processing falls faster, to about 20 percent of its empty-cache rate at that depth. The system log showed no xe error lines. An unrelated job ran on the Mac's built-in chips during these runs (load average about 2.2). As with the pool-set runs, the console output was not saved as a file.
+
 Why UD-Q4_K_M decode is 13 t/s. MEASURED with the llama.cpp Vulkan per-op logger on a 32-token decode: the GPU kernels take 72.9 ms of each 76.2 ms token, so about 96 percent of decode time is inside GPU kernels. This file mixes quantization types. The `q4_K` matrix-vector kernel for one shape runs near 375 GB/s, while the `iq4_xs` kernel for the same shape runs near 165 GB/s. The 61 `iq4_xs` calls per token cost 17.5 ms. The low rate comes from the file's quantization mix and the Vulkan shaders. INFERRED, not measured: a native PCIe slot would give the same rate, because the time is spent inside the GPU kernels.
 
 There is no native-PCIe reference for this model. No machine here has the card in a native slot, and the public llama.cpp thread has only a Llama-2-7B Q4_0 entry. No percent-of-native is given for this 27B result.
