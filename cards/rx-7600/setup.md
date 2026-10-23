@@ -54,8 +54,8 @@ Apple PCIe tunnel:
 
 - The tunnel **requires a 16 KiB-page kernel** (`CONFIG_PCIE_APPLE` depends on
   `PAGE_SIZE_16KB` in the kernel source). amdgpu GPU pages are 4 KiB and
-  independent of the host page size. A locally patched driver now passes
-  several initialization stages, but GFX still fails. This is not an unmodified-driver portability result.
+  independent of the host page size. A locally patched driver now initializes every
+  ring and runs llama.cpp Vulkan on the 14-inch M2 Max. This is not an unmodified-driver portability result.
 - Tunnel memory windows by SoC (device-tree source read): **2 GiB**
   64-bit prefetchable on base M1 and M2 parts; **8 GiB** on Pro/Max/Ultra and
   M3 parts. Every variant also has a 1 GiB 32-bit prefetchable window and
