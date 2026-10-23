@@ -1,161 +1,40 @@
-# NVIDIA GeForce RTX 5060 Ti 16GB on Omarchy
+# RTX 5060 Ti setup
 
-Blackwell (GB206), 16 GB, PCI ID `10de:2d04`. Our card is the PNY GeForce
-RTX 5060 Ti 16GB. Power, cable order, enclosure selection and removal rules
-live in [docks/](../../docks/) and [hosts/apple-silicon/](../../hosts/);
-this page covers only what is specific to this card.
+PNY GeForce RTX 5060 Ti 16GB (Blackwell, GB206), `10de:2d04`, in a USB4 dock (ADT-Link UT4G, ASMedia ASM2464PD switch) plugged into the right port of the 16-inch M1 Max MacBook Pro. The PCIe link measured Gen4 x4 (the card's slot is Gen5 x8). During all NVIDIA runs the Sonnet box with the Intel card was unplugged: with both attached, the first card's SR-IOV VF BARs (7 x 8 GiB) consume the tunnel window and the second card gets no BARs, so the NVIDIA card ran alone on the tunnel.
 
-Two driver routes exist. **nouveau with NVK** is the only one with a package
-path for aarch64, so it is the primary route on the laptops. The **NVIDIA open
-kernel modules** are the normal x86 route and the only route to CUDA.
+## Status (2026-10-23)
 
-## Status (2026-10-22)
-
-| Host | Status | What is proven |
+| Stage | State | Evidence |
 |---|---|---|
-| x86 Omarchy desktop | **BLOCKED** (no recorded reference run) | Both routes are stock distribution paths; we have run neither on our own x86 hardware with this card |
-| 13-inch M1 MacBook Pro | nouveau route **BUILT-UNTESTED** / overall **BLOCKED** | nouveau and its helpers compiled, linked and passed modpost for the 16K arm64 kernel with no source patches. No install, no load, no attach, no GSP boot, no NVK run. The NVIDIA-open route is blocked at userspace (below) |
-| 14-inch M2 Max MacBook Pro | Same | Same |
-| 16-inch M1 Max MacBook Pro | Same | Same |
-| M6 Mac mini | **BLOCKED** (no recorded reference run; Thunderbolt host support for this machine is still in progress) | No M6-specific build or run of any kind |
+| Card enumerates over USB4 | MEASURED (bus `0001:03:00.0`; BAR0 64 MiB, BAR1 256 MiB prefetchable, BAR3 32 MiB; VRAM 16311 MiB per `nvidia-smi`; no resizable BAR in use) | boot `986bd5b5` capture |
+| NVIDIA open modules load | MEASURED after the 16K-page fix below | module 595.112.07 loads and initializes |
+| CUDA | MEASURED: `nvidia-smi` reports CUDA 13.2; `cuInit`, `cuCtxCreate` and a 1 GiB `cuMemAlloc` succeed (sm_120, compute capability 12.0); llama.cpp CUDA smoke ran (see numbers) | driver + smoke receipts |
+| Vulkan | MEASURED: llama.cpp lists `Vulkan0 : NVIDIA GeForce RTX 5060 Ti (16311 MiB)`; requires the EGL files below | server log |
+| Inference | MEASURED, n=5: see the numbers table and the [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md) | Gemma + CUDA smoke receipts |
 
-What "built" means here, precisely: a compiler and linker ran on a build host.
-That is not a GPU run. Across every host and enclosure, nothing has been
-attached, loaded, bound or executed with this card, and no benchmark of any
-kind exists. See [patches.md](patches.md) for the per-route status and
-[ai.md](ai.md) for what each model runner can and cannot use.
+## What the host needs (same as the other cards on this Mac)
 
-## Route 1: nouveau with NVK
+- Kernel: the lab's patched 7.1.12 16K-page eGPU kernel with the tunnel window working (root-port prefetchable-window enable + identity bus addresses; see the [B60 record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md) for the measured procedure on this host).
+- Module options, in `/etc/modprobe.d/`: `options nvidia NVreg_RegistryDwords="RmForceDisableIomapWC=1"`. Note the key is a driver registry key inside `NVreg_RegistryDwords`, not a module parameter; a bare `NVreg_RmForceDisableIomapWC` is ignored by the kernel. Measured: the first `nvidia-smi` without the key hard-reset the Mac; with the key applied, no crash and no Xid across several runs. The mechanism (write-combined BAR mappings faulting through this host's PCIe tunnel) is inferred from this lab's earlier driver findings on the same host, not measured for NVIDIA specifically. Side effect per the driver source: this key removes NVIDIA's unaligned BAR access support on arm64.
 
-The kernel's nouveau driver already knows this chip. It identifies GB206 from
-the GPU's BOOT0 register rather than matching a wildcard, and its firmware
-interface for Blackwell is pinned to GSP-RM **570.144**. **No kernel source
-patch is required**, only a config fragment:
+## Vulkan enumeration: the measured cause
 
-```text
-CONFIG_DRM_NOUVEAU=m
-CONFIG_DRM_TTM=m
-CONFIG_DRM_TTM_HELPER=m
-```
+The NVIDIA Vulkan ICD's one-time initialization opens the distribution glvnd `libEGL.so.1`, requires `EGL_EXT_platform_base` and `EGL_EXT_platform_device`, enumerates EGL devices, and needs one advertising `EGL_NV_device_cuda`; only `libEGL_nvidia.so.0` does. Without it, every ICD entry point returns `VK_ERROR_INITIALIZATION_FAILED` and `vulkaninfo`/llama.cpp report no drivers. Two files from the driver package make it work:
 
-Firmware comes from the distribution `linux-firmware-nvidia` package together
-with `linux-firmware-whence`. The driver requests exactly three files and the
-package ships all three through its preserved symlinks
-(`nvidia/gb206 -> gb202`):
+- `libEGL_nvidia.so.0` on the library path
+- the glvnd EGL vendor manifest `/usr/share/glvnd/egl_vendor.d/10_nvidia.json` (its `library_path` points at `libEGL_nvidia.so.0`; the Vulkan ICD manifest is a separate `nvidia_icd.json`)
 
-```text
-nvidia/gb206/gsp/fmc-570.144.bin
-nvidia/gb206/gsp/bootloader-570.144.bin
-nvidia/gb206/gsp/gsp-570.144.bin
-```
+The NVIDIA ICD deliberately routes through the distribution's glvnd `libEGL`; the NVIDIA EGL library is the device-enumeration backend it needs.
 
-Do not substitute 615-series GSP images here: this kernel's GB20x firmware
-interface is pinned to 570.144 and `linux-firmware` carries no 615.x GSP at
-all. A nouveau system and an NVIDIA-open system need two different firmware
-sets, so pick one route per card.
+## Numbers
 
-Userspace is Mesa's NVK Vulkan driver (`vulkan-nouveau`, which ships for
-aarch64). NVK has been Vulkan 1.4 conformant on the RTX 50 series since Mesa
-25.2. Keep the integrated GPU's ICD (honeykrisp) installed, and select the NVK
-ICD explicitly when probing the eGPU.
+All n=5, llama.cpp build `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, all 49/49 layers on the card (weights 6637 MiB, KV 608 MiB, compute 129 MiB of 16311 MiB), temperature-0 answer correct, zero Xid lines in the kernel log.
 
-### x86
+| Test | pp512 | tg128 |
+|---|---:|---:|
+| Vulkan, Gemma-4-12B QAT Q4_0, flash attention on | 1538.69 ± 6.15 | 44.88 ± 0.02 |
+| Vulkan, Gemma-4-12B QAT Q4_0, flash attention off | 1377.52 ± 0.39 | 43.64 ± 0.01 |
+| CUDA, Qwen2.5-7B Q4_K_M (smoke, n=3, CUDA 13.4.92 build) | 2919.15 ± 37.74 | 81.46 ± 0.04 |
+| Vulkan, Qwen3.8-27B | pending | pending |
 
-```bash
-pacman -S --needed linux-firmware-nvidia mesa vulkan-nouveau vulkan-tools
-sudo modprobe nouveau
-vulkaninfo --summary      # expect the NVIDIA device under NVK
-```
-
-### Apple Silicon (conditional, unverified)
-
-Only after the shared 16K kernel ships:
-
-```bash
-getconf PAGESIZE                              # 16384
-modinfo nouveau | grep -E 'filename|vermagic'
-ls /usr/lib/firmware/nvidia/gb206/gsp/        # must list the three 570.144 files
-sudo modprobe nouveau
-VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nouveau_icd.json timeout 90 vulkaninfo --summary
-```
-
-Success means this card appears in the actual `vulkaninfo` output with clean
-kernel logs. A source match, a compiled module or a firmware hash proves
-nothing about a bind.
-
-## Route 2: NVIDIA open kernel modules (CUDA on x86)
-
-Blackwell requires the open kernel modules: NVIDIA's legacy proprietary
-kernel-module flavor does not support this generation. The proprietary driver
-for this card therefore means the open kernel modules plus the closed
-user-space stack (`nvidia-utils`, CUDA), which is what the normal Arch packages
-provide:
-
-```bash
-pacman -S --needed nvidia-open-dkms nvidia-utils
-nvidia-smi
-nvidia-smi -q | grep -i "GSP Firmware"     # expect the installed release version
-```
-
-GSP firmware ships inside the driver package for this route (installed under
-`/lib/firmware/nvidia/<version>/`), not from `linux-firmware`. Blackwell
-requires GSP firmware to boot: never disable it as a recovery shortcut.
-
-On the laptops this route is **blocked at userspace**. The kernel modules build
-unpatched for the 16K arm64 target, but no version-matched aarch64 driver
-installer could be found (the checked installer URLs return 404). Building
-kernel modules for a userspace that does not exist is not a path. **There is no
-CUDA on these laptops with this card.**
-
-## Apple Silicon constraints (both routes)
-
-From the aurora kernel and this card's BAR sizes, none of it exercised with a
-GPU. Aperture sizes are source-defined, not measured free space; see
-[hosts/apple-silicon/](../../hosts/apple-silicon/).
-
-- **Prefetch window.** The 64-bit prefetchable window behind the tunnel is
-  2 GiB on the 13-inch M1 and 8 GiB on the 14-inch M2 Max and 16-inch M1 Max. A
-  16 GiB resizable-BAR aperture fits none of them, and none is needed: nouveau
-  makes no full-VRAM aperture demand, and the NVIDIA driver resizes best-effort,
-  stepping down on failure and refusing when host firmware forbids moving
-  windows. Do not force full-VRAM ReBAR.
-- **Firmware identity.** Route 1 wants 570.144 from `linux-firmware`; Route 2
-  wants its own release's images from the driver package. A
-  `Direct firmware load ... failed with error -2` line means the exact requested
-  file is absent: check the `ls` above before anything else.
-- **Coherency.** The tunnel is non-coherent per the device tree. The NVIDIA
-  driver performs explicit cache maintenance on arm64, so it is built for the
-  problem. That is a source-reading fact, not a run.
-- **Known upstream defect, unmeasured here.**
-  [open-gpu-kernel-modules #1269](https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1269),
-  open as of 2026-10-22: on ARM64 kernels with pages larger than 4 KiB, the
-  system-memory DMA submap size is not 2 MiB-aligned, so mappings of 4 GiB and
-  above take unusable pages just below each 4 GiB boundary (Xid 31,
-  FAULT_PTE). Reproduced upstream on 64K-page hosts, and the guard is still
-  present in 615.78.08. On a 16K kernel the same code path is arithmetically
-  exposed; nobody has measured it on these hosts. If you push large host-memory
-  allocations through this card, that is where to look first.
-- **Driver contention.** One route per card, with the other module blacklisted.
-  Both match NVIDIA display-class devices.
-
-## Known failure signatures
-
-Classes, not diagnoses. Copy the first verbatim failing line and stop. Removal
-and shutdown rules are in the host guides; do not script a vendor-wide function
-select, and do not loop removal over every display-class device, because those
-sets include the integrated GPU and the Thunderbolt bridges.
-
-| Signature | What it means | Do |
-|---|---|---|
-| No NVIDIA endpoint after attach | Tunnel, authorization, link or power | Compare Thunderbolt devices and bridges before and after; use a known-good PCIe endpoint as the positive control |
-| `BAR ... no space`, `can't assign`, `failed to assign` | A bridge window cannot fit a BAR | Record endpoint BARs and every parent window; do not force a 16 GiB BAR |
-| `Direct firmware load ... failed ... -2` | The exact requested firmware is absent | Compare the requested path against the lists above |
-| GSP or RM boot timeout, `RmInitAdapter` | Firmware, MMIO or DMA failure | Preserve the preceding BAR and DART lines and the full error. Never disable GSP |
-| `nouveau ... unknown chipset` | Kernel and chip dispatch mismatch, or unreadable BOOT0 | Confirm the running kernel and PCI ID |
-| Xid 31, DART or IOMMU fault | DMA aperture, mapping or coherency | Record the IOVA and the DMA masks, then stop repeated probes |
-| `SError`, oops, panic, repeated link flap, lost SSH | SoC, MMIO or tunnel failure | Hard stop. Shut the host down with the card attached and powered; never pull a live cable |
-
-## Firmware
-
-Install GPU firmware through the official packages named above; this repository
-vendors none. See [LICENSES.md](../../LICENSES.md).
+Details and environment: [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md).
