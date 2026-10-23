@@ -31,6 +31,13 @@ A short generation check ran at temperature 0: the prompt "The capital of France
 
 The driver build and the device-tree change are local and unpublished. Do not expect these numbers from a stock kernel or stock device tree. Hot-plug is untested: the card was present at boot, so these results cover the attached-at-boot path only. The 8 GiB BAR resize still fails and BAR0 falls back to 256 MiB; the driver continues. Decode through the USB4/PCIe tunnel is expected to sit below a native PCIe x16 result; the workload's memory placement was not profiled. Both points are inference, not measurements.
 
+
+## Later clean-module run
+
+With the patch series cleaned for [PR #184](https://github.com/omacom/linux-aurora/pull/184), the same host and model measured pp512 `967.77 ± 1.09` and tg128 `31.65 ± 0.03` (3 repetitions). The kernel log stayed clean. A variant sweep moved decode barely: default DPM 31.70 ± 0.02, forced high 31.17 ± 0.06, `RADV_PERFTEST=nogttspill` 31.48 ± 0.37. During runs the GPU sat at ~98% busy with the CPU blocked in `drmSyncobjWait` in 33 of 34 stack samples: the workload is GPU-bound, and clock or RADV-spill settings are not the decode limiter.
+
+Context, not our measurement: community data for an RX 7600 on a native PCIe host ([llama.cpp discussion 10879](https://github.com/ggml-org/llama.cpp/discussions/10879)) reports tg128 58.03 t/s on Llama-2-7B Q4_0; scaled by model size (3.56/4.36 GiB) that is roughly 47 t/s on this workload class, and an RX 7600M XT eGPU entry reads 45.28. Our 31.65 sits below that band. The mechanism (RADV descriptor/upload/indirect-buffer memory that userspace wants CPU-visible landing in GTT behind the tunnel, costing dispatch latency) is an untested hypothesis; a fix would be in Mesa and is not in the kernel series. Measured supporting facts: big decode kernels stream 226-250 GB/s against a 288 GB/s peak, weights sit in VRAM, and small operations take 20-70 us here versus 4.2 us in `test-backend-ops`.
+
 ## Not measured
 
 The matched macOS Metal baseline from the [method](method.md#matched-linux-vulkan-and-macos-metal-runs) (same revision, same model, same settings on the same Mac's integrated GPU) has not run yet. Comparisons between this record and other machines are not valid until that baseline exists.
