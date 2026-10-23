@@ -12,6 +12,8 @@ ever been attached on any host.
 
 - [setup.md](setup.md): card identity, both driver routes, firmware sets,
   Apple Silicon aperture and coherency constraints, failure signatures.
+- [NVK-BUILD.md](NVK-BUILD.md): building and verifying the Mesa NVK userspace
+  from source on a 16 KiB-page aarch64 Omarchy host (no GPU required).
 - [patches.md](patches.md): why no patch is carried, per-route build status,
   licensing, upstream status and the open upstream DMA defect we do not patch.
 - [ai.md](ai.md): what llama.cpp, vLLM, Ollama, CUDA and MLX can and cannot use
