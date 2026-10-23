@@ -70,4 +70,41 @@ What is left, honestly: the GPU is busy 100 percent but memory-busy 3 percent du
 
 Setting `RADV_PERFTEST=nogttspill,dmashaders` (environment only, no code) lifts decode on the same 12-CPU boot, Llama-2-7B Q4_0, n=3: fa0 tg128 27.30 -> 36.03 t/s (+32 percent) and fa1 31.70 -> 38.85 (+22.5 percent), with prompt processing unchanged (967.39 -> 953.47 ± 55.32, one noisy repetition; 1208.12 -> 1221.99). The perf log shows the mechanism's footprint: RMS_NORM_MUL falls 75.15 -> 23.42 us (x65 per token) and total token GPU time 30.24 -> 26.73 ms.
 
-Why, read in the Mesa source and not yet proven by a second experiment: RADV allocates its shader arena in CPU-accessible VRAM and writes shader code with the CPU. On this host the kernel turns any CPU-accessed VRAM into system memory, so shader binaries sit in GTT and every instruction-cache miss in a small op reads across the tunnel (measured on this link: a small shader reading a GTT input costs 69.6 us vs 3.95 us from VRAM). `dmashaders` makes RADV allocate the arena without CPU access and upload code with SDMA, so the kernel keeps it in VRAM. Caveats: the evict/victim probe could not isolate code fetch either way; the tiny ops (ROPE/SET_ROWS, ~23 us) did not move, so a second GTT-read source remains (indirect buffer, descriptor pool, or upload BO are the candidates); this is one model and one card, and the multi-model sweep is pending.
+Why (read in the Mesa source first; the buffer placement is now measured, see the next section): RADV allocates its shader arena in CPU-accessible VRAM and writes shader code with the CPU. On this host the kernel turns any CPU-accessed VRAM into system memory, so shader binaries sit in GTT and every instruction-cache miss in a small op reads across the tunnel (measured on this link: a small shader reading a GTT input costs 69.6 us vs 3.95 us from VRAM). `dmashaders` makes RADV allocate the arena without CPU access and upload code with SDMA, so the kernel keeps it in VRAM. Caveats: the evict/victim probe could not isolate code fetch either way; the tiny ops (ROPE/SET_ROWS, ~23 us) did not move, so a second GTT-read source remains (indirect buffer, descriptor pool, or upload BO are the candidates); this is one model and one card, and the multi-model sweep is pending.
+
+## Window l: shader placement measured, ABAB, and a proposed fix, 2026-10-23
+
+MEASURED on the same 14-inch M2 Max and RX 7600 chain with all 12 CPUs online (load 0.30 at the start, GPU otherwise idle, kernel `7.1.12-2-20261013.18-egpu-ARCH`, Mesa 26.2.5 RADV). Llama-2-7B Q4_0, `llama-bench -ngl 100 -p 512 -n 128 -r 3`, flash attention off (fa0) and on (fa1). Arm A is `RADV_PERFTEST=nogttspill`; arm B adds `dmashaders`. The arms alternate A, B, A, B so a drifting baseline shows up.
+
+| Arm | fa0 tg128 | fa1 tg128 | fa0 pp512 | fa1 pp512 |
+|---|---:|---:|---:|---:|
+| A1 default | 30.22 ± 0.04 | 34.00 ± 0.03 | 1007.06 ± 2.21 | 1252.73 ± 1.12 |
+| B1 dmashaders | 38.18 ± 0.01 | 40.95 ± 0.02 | 1024.53 ± 1.15 | 1242.25 ± 6.35 |
+| A2 default | 29.45 ± 0.01 | 33.58 ± 0.02 | 1000.31 ± 1.10 | 1230.92 ± 0.65 |
+| B2 dmashaders | 38.15 ± 0.01 | 41.07 ± 0.02 | 1025.06 ± 0.40 | 1259.41 ± 6.75 |
+
+Decode gains +26 to +30 percent at fa0 and +20 to +22 percent at fa1. Prompt processing moves between -1 and +3 percent. The default arm moves between sessions (27.30 in the earlier run above, 29.02 to 30.50 in this window); the `dmashaders` arms do not (38.04 to 38.18 across every `dmashaders` or patched arm in this window).
+
+**Buffer placement, MEASURED.** `amdgpu_gem_info` of the llama process during decode, buffers of 128 KiB to 4 MiB. The 262144-byte buffer, which matches RADV's 256 KiB shader arena by size (it was identified by size and by the change below, not by a driver label), is `GTT CPU_ACCESS_REQUIRED` with the default and `VRAM NO_CPU_ACCESS` with `dmashaders`. A 2883584-byte buffer is `VRAM NO_CPU_ACCESS` in both. Two smaller buffers (163840 and 131072 bytes) stay in `GTT CPU_ACCESS_REQUIRED` in both arms.
+
+**Why that costs decode, INFERRED.** Shader code in system memory means every instruction-cache miss in a small operation crosses the tunnel. The earlier probe on this link (a small shader reading a GTT input costs 69.6 us against 3.95 us from VRAM) and the size of the change are consistent with that. Instruction fetch itself was not isolated.
+
+### Proposed fix: not yet submitted
+
+An upstream Mesa change would make the existing `dmashaders` behaviour the default when the device has dedicated VRAM and the kernel reports no CPU-visible VRAM (`has_dedicated_vram && vram_vis_size_kb == 0`). It is a proposed upstream fix, not yet submitted. It is documented in [the RX 7600 patch notes](../cards/rx-7600/patches.md). The same Mesa 26.2.5 source was built twice, unpatched and patched, with no environment switch:
+
+| Build | fa0 tg128 | fa1 tg128 |
+|---|---:|---:|
+| unpatched | 29.02 ± 0.01 | 33.15 ± 0.02 |
+| patched | 38.04 ± 0.01 | 40.97 ± 0.07 |
+| unpatched | 30.50 ± 0.02 | 34.56 ± 0.01 |
+| patched | 38.13 ± 0.02 | 40.96 ± 0.07 |
+| unpatched, `dmashaders` (control) | 38.08 ± 0.06 | 40.92 ± 0.03 |
+
+The patched build reproduces the environment switch within 0.1 t/s. Decode is +25 to +31 percent at fa0 and +19 to +24 percent at fa1 (the low end is +18.5). The perf logger on the patched build, with no switch, shows ROPE and SET_ROWS at about 21 us per operation (32 each per token).
+
+Whether the condition fires on another host was read from the source, not tested: `vram_vis_size_kb` comes from the kernel's CPU-accessible VRAM size, which the kernel patch in [PR #184](https://github.com/omacom/linux-aurora/pull/184) reports as zero on non-posted hosts (read from that patch). No other GPU or host was tried, and no test suite beyond llama.cpp ran.
+
+### What is left of the gap
+
+Llama-2-7B Q4_0 tg128 is now 38.1 against the community thread's native RX 7600 value of 58.03 (an older llama.cpp, not rerun here): about 66 percent of native decode, up from 50 percent. The remaining per-operation cost is about 21 us on ROPE and SET_ROWS, which `dmashaders` does not remove. A candidate, INFERRED and untested: other buffers that RADV asks to write with the CPU (command-buffer, descriptor or upload buffers) are still in system memory. Which of them the GPU reads on each operation has not been measured.

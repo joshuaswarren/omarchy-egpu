@@ -10,6 +10,32 @@ The earlier unmodified module package passed strict modpost against source [auro
 
 Do not treat the module build or the working run as a complete shared-kernel qualification. The result depends on unpublished changes, covers one card on one host, and has not been exercised with hot-plug.
 
+## Proposed Mesa change: not yet submitted
+
+RADV writes shader code with the CPU into a VRAM buffer that has CPU access. On this host the kernel reports no CPU-visible VRAM, so that buffer is placed in system memory behind the tunnel. The existing `RADV_PERFTEST=dmashaders` path (invisible VRAM plus an SDMA upload) avoids that. The proposed change makes that path the default when the device has dedicated VRAM and `vram_vis_size_kb == 0`.
+
+Status: proposed upstream fix, not yet submitted. It has not been posted to Mesa. Base: Mesa 26.2.5. Patch SHA-256 `73c54d12d1da138e4abc11b6abad406712efe7ed1da8f21b4729696bfae840a6`. Measured only on the RX 7600 on the 14-inch M2 Max: the patched build matches the environment switch within 0.1 t/s (see the [window l section](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md)). Not tested: any other GPU or host, any test suite beyond llama.cpp.
+
+```diff
+--- a/src/amd/vulkan/radv_device.c
++++ b/src/amd/vulkan/radv_device.c
+@@ -1598,7 +1598,13 @@
+    }
+    device->private_sdma_queue = VK_NULL_HANDLE;
+ 
+-   device->shader_use_invisible_vram = (instance->perftest_flags & RADV_PERFTEST_DMA_SHADERS) &&
++   /* Shader code is written by the CPU. When the kernel exposes no CPU-visible VRAM (for example a dGPU behind a
++    * non-posted PCIe tunnel), a CPU-accessed VRAM buffer ends up in system memory and every instruction cache miss
++    * crosses the link, so upload the code with SDMA into invisible VRAM instead.
++    */
++   const bool no_visible_vram = pdev->info.has_dedicated_vram && pdev->info.vram_vis_size_kb == 0;
++
++   device->shader_use_invisible_vram = ((instance->perftest_flags & RADV_PERFTEST_DMA_SHADERS) || no_visible_vram) &&
+                                        /* SDMA buffer copy is only implemented for GFX7+. */
+                                        pdev->info.gfx_level >= GFX7;
+    result = radv_init_shader_upload_queue(device);
+```
+
 ## Published package boundary
 
 The inspected `linux-aurora` 7.2.10-2 [package config](https://github.com/omacom/omarchy-pkgs/blob/master/pkgbuilds/linux-aurora/config) has `CONFIG_DRM_AMDGPU` disabled, as read on 2026-10-22. Installing firmware and RADV alone does not add that kernel driver. The local experimental build does not change this published-package observation.

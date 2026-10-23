@@ -36,4 +36,19 @@ The same small-operation cost appears on both cards this repo has measured, acro
 
 The B60 row uses the thread's native RX 7600 as its only available native reference; no native Arc Pro B60 entry exists in that thread.
 
-Prompt processing hides per-operation latency because its operations are large; decode does not. Part of the small-op cost is now explained: RADV's shader arena lands in system memory behind the tunnel, and `RADV_PERFTEST=dmashaders` (which keeps shader code in VRAM) lifts decode +32 percent fa0 / +22.5 percent fa1 - see the headline record's dmashaders section for the numbers, the source-read mechanism (not yet second-experiment confirmed), and the remaining ~23 us tiny ops. The other refutations stand (queue round trips under 3 percent, barrier flavours flat at ~3 us, GFXOFF inside noise, descriptor cold fetch, tensor placement, CPU count). The link-latency numbers above remain measurements.
+Prompt processing hides per-operation latency because its operations are large; decode does not. Part of the small-op cost is now explained: RADV's shader arena lands in system memory behind the tunnel, and `RADV_PERFTEST=dmashaders` (which keeps shader code in VRAM) lifts decode +32 percent fa0 / +22.5 percent fa1 - see the headline record's dmashaders section and its window l section for the numbers, the measured buffer placement, and the remaining ~21 to 23 us tiny ops. The other refutations stand (queue round trips under 3 percent, barrier flavours flat at ~3 us, GFXOFF inside noise, descriptor cold fetch, tensor placement, CPU count). The link-latency numbers above remain measurements.
+
+## Four-model sweep with dmashaders, 2026-10-23 (window l)
+
+MEASURED on the same host with all 12 CPUs online, `RADV_PERFTEST=nogttspill,dmashaders`, n=3, all layers on the card, flash attention off and on. The Llama-2-7B row is the same-window alternating test from the headline record. The other three models have no same-window default arm; their "before" is the 12-CPU table above, taken on a different boot, so their gain carries that boot-to-boot spread (the Llama-2 default decode moved between 27.30 and 30.50 across sessions).
+
+| Model | tg128 fa0 | tg128 fa1 | pp512 fa0 | Before: tg128 fa0 / fa1 | Decode gain fa0 / fa1 |
+|---|---:|---:|---:|---:|---:|
+| Qwen2.5-3B Q4_K_M | 47.52 ± 0.07 | 50.69 ± 0.01 | 1980.09 ± 6.52 | 35.34 / 39.76 | +34 / +27 percent |
+| Llama-3.1-8B Q4_K_M | 33.89 ± 0.05 | 35.83 ± 0.04 | 903.66 ± 3.23 | 25.79 / 28.42 | +31 / +26 percent |
+| Qwen3-8B Q4_K_M | 32.06 ± 0.03 | 33.89 ± 0.01 | 881.36 ± 0.89 | 22.88 / 23.82 | +40 / +42 percent |
+| Llama-2-7B Q4_0 (first A/B pair, same window) | 38.18 ± 0.01 | 40.95 ± 0.02 | 1024.53 ± 1.15 | 30.22 / 34.00 | +26 / +20 percent |
+
+Prompt processing at fa1 is 2062.73, 956.59 and 926.40 for the first three rows. Against the earlier run it is 1 to 5 percent higher across both flash-attention settings, within what a different boot can move.
+
+Llama-2-7B Q4_0 against the community thread's native RX 7600 (58.03 tg128, older llama.cpp, not rerun here): 38.15 to 38.18 is about 66 percent of native decode. It was about 50 percent (29.26) before `dmashaders`.
