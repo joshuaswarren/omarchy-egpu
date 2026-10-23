@@ -1,16 +1,16 @@
 # RTX 5060 Ti setup
 
-PNY GeForce RTX 5060 Ti 16GB (Blackwell, GB206), `10de:2d04`, in a USB4 dock (ADT-Link UT4G, ASMedia ASM2464PD switch) plugged into the right port of the 16-inch M1 Max MacBook Pro. The PCIe link measured Gen4 x4 (the card's slot is Gen5 x8). During all NVIDIA runs the Sonnet box with the Intel card was unplugged: with both attached, the first card's SR-IOV VF BARs (7 x 8 GiB) consume the tunnel window and the second card gets no BARs, so the NVIDIA card ran alone on the tunnel.
+PNY GeForce RTX 5060 Ti 16GB (Blackwell, GB206), `10de:2d04`, in a USB4 dock on the 16-inch M1 Max MacBook Pro, bus `0001:03:00.0` (per the `nvidia-smi` receipt). Card, VRAM, and bus identity are receipted; the dock model and port position are the operator's physical setup notes, not instrument captures. During all NVIDIA runs the Intel card's enclosure was unplugged: with both cards attached, the first card's virtual-function BARs consume the tunnel window and the second card gets no address space, so the NVIDIA card ran alone on the tunnel (observed when attempting both; the multi-card constraint is the lab's, stated here as a setup condition, not a benchmark variable).
 
 ## Status (2026-10-23)
 
 | Stage | State | Evidence |
 |---|---|---|
-| Card enumerates over USB4 | MEASURED (bus `0001:03:00.0`; BAR0 64 MiB, BAR1 256 MiB prefetchable, BAR3 32 MiB; VRAM 16311 MiB per `nvidia-smi`; no resizable BAR in use) | boot `986bd5b5` capture |
+| Card enumerates over USB4 | MEASURED (bus `0001:03:00.0`; VRAM 16311 MiB per `nvidia-smi`) | `nvidia-smi` capture, 2026-10-23 |
 | NVIDIA open modules load | MEASURED after the 16K-page fix below | module 595.112.07 loads and initializes |
 | CUDA | MEASURED: `nvidia-smi` reports CUDA 13.2; `cuInit`, `cuCtxCreate` and a 1 GiB `cuMemAlloc` succeed (sm_120, compute capability 12.0); llama.cpp CUDA smoke ran (see numbers) | driver + smoke receipts |
 | Vulkan | MEASURED: llama.cpp lists `Vulkan0 : NVIDIA GeForce RTX 5060 Ti (16311 MiB)`; requires the EGL files below | server log |
-| Inference | MEASURED, n=5: see the numbers table and the [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md) | Gemma + CUDA smoke receipts |
+| Inference | MEASURED, n=5 (Vulkan) and n=5 (CUDA): see the numbers table and the [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md) | Gemma and CUDA benchmark receipts |
 
 ## What the host needs (same as the other cards on this Mac)
 
@@ -28,13 +28,19 @@ The NVIDIA ICD deliberately routes through the distribution's glvnd `libEGL`; th
 
 ## Numbers
 
-All n=5, llama.cpp build `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, all 49/49 layers on the card (weights 6637 MiB, KV 608 MiB, compute 129 MiB of 16311 MiB), temperature-0 answer correct, zero Xid lines in the kernel log.
+All rows n=5, llama.cpp build `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, all 49/49 layers on the card (weights 6637 MiB, KV 608 MiB, compute 129 MiB of 16311 MiB), temperature-0 answer correct, zero Xid lines in the kernel log.
 
 | Test | pp512 | tg128 |
 |---|---:|---:|
 | Vulkan, Gemma-4-12B QAT Q4_0, flash attention on | 1538.69 ± 6.15 | 44.88 ± 0.02 |
 | Vulkan, Gemma-4-12B QAT Q4_0, flash attention off | 1377.52 ± 0.39 | 43.64 ± 0.01 |
-| CUDA, Qwen2.5-7B Q4_K_M (smoke, n=3, CUDA 13.4.92 build) | 2919.15 ± 37.74 | 81.46 ± 0.04 |
-| Vulkan, Qwen3.8-27B | pending | pending |
+| CUDA, Gemma-4-12B QAT Q4_0, flash attention on (toolkit 13.4.92, sm_120) | 2123.08 | 49.83 |
+| CUDA, Gemma-4-12B QAT Q4_0, flash attention off | 1732.39 | 48.08 |
+| CUDA, Qwen2.5-7B Q4_K_M (first smoke, n=3) | 2919.15 ± 37.74 | 81.46 ± 0.04 |
+| Vulkan or CUDA, Qwen3.8-27B | not run | not run |
 
 Details and environment: [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md).
+
+## The nouveau route (not part of these runs)
+
+An earlier shared-kernel route compiled nouveau (plus NVK for Vulkan) and the NVIDIA-open modules against a common kernel target; that established compilation only, and no nouveau runtime run exists on this hardware. Every measurement on this page is the NVIDIA-open route. The nouveau build notes are kept in [NVK-BUILD.md](NVK-BUILD.md) for the day someone exercises that route.
