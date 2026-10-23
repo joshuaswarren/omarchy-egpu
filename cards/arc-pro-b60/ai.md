@@ -1,8 +1,6 @@
 # local-ML on the Arc Pro B60 (Battlemage, BMG-G21, 24 GB)
 
-What each stack can and cannot use this card for. Anything marked untested has
-no run on our hardware: no number on this page is a measurement, and no
-performance or model-size claim is made here.
+What each stack can and cannot use this card for. One stack has a measured result on a 16-inch M1 Max MacBook Pro, behind unpublished local kernel patches; every number is a single-CPU lower bound.
 
 Host prerequisites and the driver status live in [setup.md](setup.md); the
 driver patches and their state in [patches.md](patches.md).
@@ -11,7 +9,7 @@ driver patches and their state in [patches.md](patches.md).
 
 | Stack | x86 Omarchy host | Apple Silicon Omarchy host | Notes |
 |---|---|---|---|
-| llama.cpp (Vulkan, ANV) | Applicable, untested by us | Applicable in principle, **BLOCKED**: no driver run exists | Needs `vulkan-intel` (ships for aarch64) plus a working xe stack |
+| llama.cpp (Vulkan, ANV) | Applicable, untested by us | **MEASURED on the M1 Max:** pp512 968.87 ± 12.77, tg128 22.29 ± 0.40 t/s, Qwen2.5-7B Q4_K_M; single-CPU lower bound | [Benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md); requires the unpublished patches and `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1` |
 | llama.cpp (SYCL, oneAPI) | Applicable, untested by us; Intel publishes a guide for the SYCL backend on Arc | **BLOCKED**: same driver gate | Intel developer article covers the SYCL backend |
 | vLLM (XPU backend) | Applicable: Arc Pro B-Series is listed as validated hardware on the XPU page | **BLOCKED**: XPU targets x86, and the driver gate is closed | [vLLM XPU docs](https://docs.vllm.ai/en/stable/models/hardware_supported_models/xpu/) |
 | Ollama (Intel IPEX-LLM path) | Applicable: IPEX-LLM ships a BMG quickstart and an Ollama path | **BLOCKED**: same | [IPEX-LLM](https://github.com/intel/ipex-llm) |

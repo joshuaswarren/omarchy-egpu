@@ -30,7 +30,7 @@ This matrix separates evidence stages. `MEASURED` names an actual runtime observ
 |---|---|---|---|---|---|
 | RX 7600 8GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | MEASURED: amdgpu loads with all rings; llama.cpp Vulkan runs (pp512 964.6, tg128 31.1 t/s, single-CPU lower bounds); needs local device-tree and kernel changes; hot-plug untested | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | RX 9070 16GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | BLOCKED: host transport support | BLOCKED: no reference run recorded |
-| Arc Pro B60 24GB | BLOCKED: xe 4K-page requirement | BLOCKED: xe 4K-page requirement | BLOCKED: xe 4K-page requirement | BLOCKED: host transport support | BLOCKED: no reference run recorded |
+| Arc Pro B60 24GB | BLOCKED: xe 4K-page requirement | MEASURED: llama.cpp Vulkan runs (pp512 968.9, tg128 22.3 t/s, single-CPU); needs local xe patches; hot-plug untested | BLOCKED: no GPU runtime proof | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | RTX 5060 Ti 16GB | BUILT-UNTESTED: nouveau, shared 16K target | BUILT-UNTESTED: shared target, host config unverified | BUILT-UNTESTED: nouveau, shared 16K target | BLOCKED: no host-specific build or transport proof | BLOCKED: no reference run recorded |
 
 Evidence cutoff: 2026-10-22. The shared NVIDIA build targets kernel `7.1.12-2-20261013.18-sep-ARCH`, source `6f63677751854d57bcfac172314957bc2197c05f`. It is not proof that a module was installed or loaded. AMD and Intel build details belong in their card guides; the matrix reports runtime readiness.
