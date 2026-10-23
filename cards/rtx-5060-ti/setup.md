@@ -6,7 +6,7 @@ PNY GeForce RTX 5060 Ti 16GB (Blackwell, GB206), `10de:2d04`, in a USB4 dock on 
 
 | Stage | State | Evidence |
 |---|---|---|
-| Card enumerates over USB4 | MEASURED (bus `0001:03:00.0`; VRAM 16311 MiB; BAR0 64 MiB non-prefetchable, BAR1 256 MiB prefetchable, BAR3 32 MiB; no resizable BAR; PCIe x4 through the tunnel, card x8-capable) | `nvidia-smi` + PCI captures, 2026-10-23 |
+| Card enumerates over USB4 | MEASURED (bus `0001:03:00.0`; VRAM 16311 MiB; BAR0 64 MiB non-prefetchable, BAR1 256 MiB prefetchable, BAR3 32 MiB; resizable-BAR capability present, BAR1 left at 256 MiB; PCIe x4 through the tunnel, card x8-capable) | `nvidia-smi` + PCI captures, 2026-10-23 |
 | NVIDIA open modules load | MEASURED after the 16K-page fix below | module 595.112.07 loads and initializes |
 | CUDA | MEASURED: driver ceiling 13.2 per `nvidia-smi`; toolkit 13.4.92 (nvcc); cuInit 0, cuCtxCreate 0, 1 GiB cuMemAlloc 0 (compute capability 12.0, 15849 MiB); llama.cpp CUDA benchmarks ran (see numbers) | driver-API + nvcc + benchmark receipts |
 | Vulkan | MEASURED: llama.cpp lists `Vulkan0 : NVIDIA GeForce RTX 5060 Ti (16311 MiB)`; requires the EGL files below | server log |

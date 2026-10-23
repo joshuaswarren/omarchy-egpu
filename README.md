@@ -33,7 +33,7 @@ This matrix separates evidence stages. `MEASURED` names an actual runtime observ
 | Arc Pro B60 24GB | BLOCKED: xe 4K-page requirement | MEASURED: llama.cpp Vulkan runs on a 10-CPU boot. Headline: Qwen3.8-27B Q4_0 (unsloth) runs fully on the card (66 of 66 layers) at pp512 428.04 and tg128 17.28 t/s. That is fa1, n=5. Flash attention 0 gave 432.70 and 17.32. The UD-Q4_K_M file of the same model gives pp512 442.61 and tg128 13.12. No native reference was measured for the 27B. Private ANV and xe patches (not upstream) give Llama-2-7B Q4_0 tg128 of 63.8 fa0 and 66.0 fa1. That is about 93 to 94 percent of the thread's native B60 at matched flash attention. The stock buffer placement gave Qwen2.5-7B Q4_K_M tg128 20.6 t/s. It needs local xe patches. Hot-plug is untested | BLOCKED: no GPU runtime proof | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | RTX 5060 Ti 16GB | not run on this host | MEASURED: NVIDIA open 595.112.07 loads (16K fix), CUDA and Vulkan run; Gemma-4-12B tg128 44.88 Vulkan / 49.83 CUDA | not run on this host | not run on this host | not run on this host |
 
-Evidence cutoff: 2026-10-23 for the RX 7600 and Arc Pro B60 rows, 2026-10-22 for the others. The shared NVIDIA build targets kernel `7.1.12-2-20261013.18-sep-ARCH`, source `6f63677751854d57bcfac172314957bc2197c05f`. It is not proof that a module was installed or loaded. AMD and Intel build details belong in their card guides; the matrix reports runtime readiness.
+Evidence cutoff: 2026-10-23. The RTX 5060 Ti rows come from the NVIDIA-open route on the lab eGPU kernel (record in benchmarks/); the nouveau route has no runtime run. AMD and Intel build details belong in their card guides; the matrix reports runtime readiness.
 
 ## FAQ
 
