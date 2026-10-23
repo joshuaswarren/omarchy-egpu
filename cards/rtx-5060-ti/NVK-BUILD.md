@@ -46,7 +46,7 @@ compiler (`nak`) is Rust, and NVK's OpenCL kernels build with Mesa's own
 `libLLVM.so.22.1` while `llvm-libs` 23.1.1 is installed, so every rustc
 invocation dies before compiling anything. The repo database can also list a
 rust package the mirrors still 404 (db-ahead-of-mirror skew). The clean fix
-needs no system package — a self-contained rustup tree next to the build:
+needs no system package - a self-contained rustup tree next to the build:
 
 ```bash
 export RUSTUP_HOME=$HOME/scratch/rustup CARGO_HOME=$HOME/scratch/cargo
@@ -99,7 +99,7 @@ Pass, with no nouveau driver bound to the card:
 - `vkEnumeratePhysicalDevices` fails with `ERROR_INITIALIZATION_FAILED`
   ("Failed to detect any valid GPUs"), `vulkaninfo` exiting 1.
 
-That failure at enumeration — not at instance creation — is the userspace
+That failure at enumeration - not at instance creation - is the userspace
 half working on a 16 KiB arm64 host. A raw `vkCreateInstance` check
 (`rc = 0, VK_SUCCESS`) is a cleaner second signal. "Failed to load ICD",
 missing-symbol errors or a crash at `vkCreateInstance` are the failure
@@ -109,7 +109,7 @@ on these hosts fails earlier, inside `vkCreateInstance` itself.
 Measured on a 16-inch M1 Max (10 CPU), 2026-10-23, Mesa 26.2.4 tarball
 release build: 1247 ninja targets, toolchain rust 1.99.1 (rustup minimal),
 bindgen 0.73.2, cbindgen via cargo, clang 23.1.1, meson 1.12.1, ninja 1.13.2.
-The full script — cbindgen install, configure, compile, install — ran in
+The full script - cbindgen install, configure, compile, install - ran in
 59 s wall at 8 jobs only because ccache had the shared core objects from
 earlier Mesa builds on the host; treat that as a warm-cache number, not a
 cold-tree build time. Staged install footprint: 22 MB
@@ -127,8 +127,8 @@ additionally needs, in [setup.md](setup.md)'s terms:
    BAR mappings behind the Apple tunnel;
 2. the three GSP-RM 570.144 firmware files under
    `/usr/lib/firmware/nvidia/gb206/gsp/`;
-3. `modprobe nouveau` with the NVIDIA-open modules unloaded — one route per
-   card — then the `VK_DRIVER_FILES` probe from setup.md, which must show the
+3. `modprobe nouveau` with the NVIDIA-open modules unloaded - one route per
+   card - then the `VK_DRIVER_FILES` probe from setup.md, which must show the
    RTX 5060 Ti with clean kernel logs before any inference claim.
 
 Vulkan compute facts relevant to inference on this chip, from the 26.2.4
