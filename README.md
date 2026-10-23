@@ -2,7 +2,7 @@
 
 Set up an external GPU on Omarchy, check each layer, and run local inference when the card is ready. This repo covers AMD RX 7600 and RX 9070, Intel Arc Pro B60, and NVIDIA RTX 5060 Ti on x86 and Apple Silicon Linux hosts.
 
-The RX 7600 (Navi 33, RDNA3) now runs local inference on a 14-inch M2 Max MacBook Pro. On 2026-10-22 at 4:58 PM CT, amdgpu loaded with no ring errors. llama.cpp on Vulkan (RADV) ran Qwen2.5-7B Q4_K_M at 964.6 t/s prompt processing (pp512) and 31.1 t/s generation (tg128), with correct output. It took a one-line device-tree memory-window change plus kernel patch 0014, which fixes a Vulkan SIGBUS. Neither change is upstream yet; a linux-aurora pull request is pending. Real cable hot-plug is still untested: the card was attached at boot. Generation speed is being investigated. See the [host result](hosts/m2-max/) and the [benchmark record](benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md).
+The RX 7600 (Navi 33, RDNA3) now runs local inference on a 14-inch M2 Max MacBook Pro. On 2026-10-22 at 4:58 PM CT, amdgpu loaded with no ring errors. llama.cpp on Vulkan (RADV) ran Qwen2.5-7B Q4_K_M at 964.6 t/s prompt processing (pp512) and 31.1 t/s generation (tg128), with correct output. It took a one-line device-tree memory-window change plus kernel patch 0014, which fixes a Vulkan SIGBUS. Neither change is upstream yet; the kernel work is open as [linux-aurora PR #184](https://github.com/omacom/linux-aurora/pull/184). Real cable hot-plug is still untested: the card was attached at boot. Generation speed is being investigated. See the [host result](hosts/m2-max/), the [benchmark record](benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md), and [how to check your own chain](#quick-start).
 
 ## Quick start
 
