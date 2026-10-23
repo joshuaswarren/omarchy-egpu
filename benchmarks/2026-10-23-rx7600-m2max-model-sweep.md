@@ -1,6 +1,6 @@
 # RX 7600 model sweep and dispatch-latency probe, 2026-10-23
 
-MEASURED on the same 14-inch M2 Max MacBook Pro and RX 7600 chain as the [headline record](2026-10-22-rx7600-m2max-llamacpp-vulkan.md), on the cleaned module (`r0100-clean`). Conditions differ from that record: other tickets were running on the host during this sweep (load average 2.3 to 4.2), so these rows are a comparison across models under load, not a clean-room rerun of the headline number. Every run used the same command shape (n=3, all 99 layers on the card, flash-attention off and on), returned rc=0, and left the last 200 kernel-log lines free of errors. Each model was deleted after its run.
+MEASURED on the same 14-inch M2 Max MacBook Pro and RX 7600 chain as the [headline record](2026-10-22-rx7600-m2max-llamacpp-vulkan.md), on the cleaned module (`r0100-clean`). **All throughput numbers below are single-CPU lower bounds:** every eGPU boot in this sweep ran with 1 of the host's 12 CPUs online because the replacement device tree carried stale spin-table addresses; see the correction in the headline record. The GPU-side latency probe is unaffected. Conditions also differ from the headline record: other tickets were running on the host (load average 2.3 to 4.2). Every run used the same command shape (n=3, all 99 layers on the card, flash-attention off and on), returned rc=0, and left the last 200 kernel-log lines free of errors. Each model was deleted after its run.
 
 | Model | Size | pp512 fa=0 | tg128 fa=0 | pp512 fa=1 | tg128 fa=1 |
 |---|---|---:|---:|---:|---:|

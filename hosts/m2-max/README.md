@@ -2,6 +2,8 @@
 
 Status on 2026-10-22: **an RX 7600 runs llama.cpp Vulkan inference on this host.** With local driver and device-tree changes, amdgpu initializes every ring, RADV enumerates the card, and a measured run reached 964.58 t/s prompt processing and 31.07 t/s decode on Qwen2.5-7B Q4_K_M. Those changes are not published, so no stock system reproduces this yet. Hot-plug remains untested: the card was attached at boot.
 
+**Correction, 2026-10-23:** all eGPU measurements so far ran with only 1 of the 12 CPUs online. A saved replacement device tree cannot be reused across boots on this platform: the spin-table `cpu-release-addr` values come from the bootloader and change every boot, so a saved DTB carries stale addresses and the secondary cores fail to start (`CPU1..CPU11: failed to come online`, `Brought up 1 node, 1 CPU`). Rebuilding the DTB from the same boot's live tree did not help. Every published RX 7600 number is therefore a single-CPU lower bound; a `nice -19` retest on the sole core moved decode by about 6 percent. The kernel, device-tree, and PR findings are unaffected, as is the GPU-side latency probe.
+
 The tested chain is an ASRock RX 7600 Challenger OC, OwlTree dock, and Rosewill ASM2464PD USB4 enclosure. The latest captured probe ran at 22:24Z with kernel `7.1.12-2-20261013.18-egpu-ARCH`, aarch64, and 16 KiB pages. Measured numbers and command: [llama.cpp record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md).
 
 ## What the working run required, in order
@@ -35,7 +37,7 @@ The earlier MES KIQ ring timeout disappeared once the 64-bit window worked. Door
 
 ## Not done
 
-Cable hot-plug needs a person at the dock. The 8 GiB BAR resize is unresolved. A display or cube run and the matched macOS Metal baseline from the [method](../../benchmarks/method.md) remain unrun. The local patch series and the device-tree change are unpublished; kernel pull-request cleanup is in progress.
+Cable hot-plug needs a person at the dock. The 8 GiB BAR resize is unresolved. A display or cube run, the matched macOS Metal baseline from the [method](../../benchmarks/method.md), and a 12-CPU rerun of the throughput numbers remain unrun. The identity window fix is measured as a device-tree edit and now also as DTS changes in [PR #184](https://github.com/omacom/linux-aurora/pull/184); an in-kernel fallback that does not need a DT edit is being prepared.
 
 ## Historical hot-plug bus-range clipping
 
