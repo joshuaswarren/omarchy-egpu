@@ -1,21 +1,21 @@
 # RTX 5060 Ti setup
 
-PNY GeForce RTX 5060 Ti 16GB (Blackwell, GB206), `10de:2d04`, in a USB4 dock on the 16-inch M1 Max MacBook Pro, bus `0001:03:00.0` (per the `nvidia-smi` receipt). Card, VRAM, and bus identity are receipted; the dock model and port position are the operator's physical setup notes, not instrument captures. During all NVIDIA runs the Intel card's enclosure was unplugged: with both cards attached, the first card's virtual-function BARs consume the tunnel window and the second card gets no address space, so the NVIDIA card ran alone on the tunnel (observed when attempting both; the multi-card constraint is the lab's, stated here as a setup condition, not a benchmark variable).
+PNY GeForce RTX 5060 Ti 16GB (Blackwell, GB206), `10de:2d04`, in a USB4 dock on the 16-inch M1 Max MacBook Pro, bus `0001:03:00.0` (per the `nvidia-smi` receipt). Dock identity, port, BAR sizes, link width, and the both-cards constraint are receipted (boltctl, the PCI tree, and kernel-log captures from 2026-10-23); the link speed varies with load and idles at 2.5 GT/s, so the safe statement is PCIe x4 through the USB4 tunnel (card capable of x8). During all NVIDIA runs the Intel card's enclosure was unplugged: with both attached, the Intel card's SR-IOV VF BARs (7 x 8 GiB, 56 GiB total) consume the tunnel window and the second card gets no address space, so the NVIDIA card ran alone (kernel-log capture of the both-cards boot).
 
 ## Status (2026-10-23)
 
 | Stage | State | Evidence |
 |---|---|---|
-| Card enumerates over USB4 | MEASURED (bus `0001:03:00.0`; VRAM 16311 MiB per `nvidia-smi`) | `nvidia-smi` capture, 2026-10-23 |
+| Card enumerates over USB4 | MEASURED (bus `0001:03:00.0`; VRAM 16311 MiB; BAR0 64 MiB non-prefetchable, BAR1 256 MiB prefetchable, BAR3 32 MiB; no resizable BAR; PCIe x4 through the tunnel, card x8-capable) | `nvidia-smi` + PCI captures, 2026-10-23 |
 | NVIDIA open modules load | MEASURED after the 16K-page fix below | module 595.112.07 loads and initializes |
-| CUDA | MEASURED: `nvidia-smi` reports CUDA 13.2; `cuInit`, `cuCtxCreate` and a 1 GiB `cuMemAlloc` succeed (sm_120, compute capability 12.0); llama.cpp CUDA smoke ran (see numbers) | driver + smoke receipts |
+| CUDA | MEASURED: driver ceiling 13.2 per `nvidia-smi`; toolkit 13.4.92 (nvcc); cuInit 0, cuCtxCreate 0, 1 GiB cuMemAlloc 0 (compute capability 12.0, 15849 MiB); llama.cpp CUDA benchmarks ran (see numbers) | driver-API + nvcc + benchmark receipts |
 | Vulkan | MEASURED: llama.cpp lists `Vulkan0 : NVIDIA GeForce RTX 5060 Ti (16311 MiB)`; requires the EGL files below | server log |
 | Inference | MEASURED, n=5 (Vulkan) and n=5 (CUDA): see the numbers table and the [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md) | Gemma and CUDA benchmark receipts |
 
 ## What the host needs (same as the other cards on this Mac)
 
 - Kernel: the lab's patched 7.1.12 16K-page eGPU kernel with the tunnel window working (root-port prefetchable-window enable + identity bus addresses; see the [B60 record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md) for the measured procedure on this host).
-- Module options, in `/etc/modprobe.d/`: `options nvidia NVreg_RegistryDwords="RmForceDisableIomapWC=1"`. Note the key is a driver registry key inside `NVreg_RegistryDwords`, not a module parameter; a bare `NVreg_RmForceDisableIomapWC` is ignored by the kernel. Measured: the first `nvidia-smi` without the key hard-reset the Mac; with the key applied, no crash and no Xid across several runs. The mechanism (write-combined BAR mappings faulting through this host's PCIe tunnel) is inferred from this lab's earlier driver findings on the same host, not measured for NVIDIA specifically. Side effect per the driver source: this key removes NVIDIA's unaligned BAR access support on arm64.
+- Module options, in `/etc/modprobe.d/`: `options nvidia NVreg_RegistryDwords="RmForceDisableIomapWC=1"`. Note the key is a driver registry key inside `NVreg_RegistryDwords`, not a module parameter; a bare `NVreg_RmForceDisableIomapWC` is ignored by the kernel. Measured: the first `nvidia-smi` without the key hard-reset the Mac (netconsole shows the driver load at 20:22:45Z, Chipset-not-recognized at 20:24:04Z, then fresh boot messages at 20:25:01Z, no oops text; the boot id change is independently logged). With the key applied, no crash and no Xid across several runs. The mechanism (write-combined BAR mappings faulting through this host's PCIe tunnel) is inferred from this lab's earlier driver findings on the same host, not measured for NVIDIA specifically. Side effect per the driver source: this key removes NVIDIA's unaligned BAR access support on arm64.
 
 ## Vulkan enumeration: the measured cause
 
@@ -34,8 +34,8 @@ All rows n=5, llama.cpp build `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, all 49
 |---|---:|---:|
 | Vulkan, Gemma-4-12B QAT Q4_0, flash attention on | 1538.69 ± 6.15 | 44.88 ± 0.02 |
 | Vulkan, Gemma-4-12B QAT Q4_0, flash attention off | 1377.52 ± 0.39 | 43.64 ± 0.01 |
-| CUDA, Gemma-4-12B QAT Q4_0, flash attention on (toolkit 13.4.92, sm_120) | 2123.08 | 49.83 |
-| CUDA, Gemma-4-12B QAT Q4_0, flash attention off | 1732.39 | 48.08 |
+| CUDA, Gemma-4-12B QAT Q4_0, flash attention on (toolkit 13.4.92, sm_120) | 2123.08 ± 24.18 | 49.83 ± 0.03 |
+| CUDA, Gemma-4-12B QAT Q4_0, flash attention off | 1732.39 ± 3.80 | 48.08 ± 0.05 |
 | CUDA, Qwen2.5-7B Q4_K_M (first smoke, n=3) | 2919.15 ± 37.74 | 81.46 ± 0.04 |
 | Vulkan or CUDA, Qwen3.8-27B | not run | not run |
 
@@ -43,4 +43,4 @@ Details and environment: [benchmark record](../../benchmarks/2026-10-23-5060ti-m
 
 ## The nouveau route (not part of these runs)
 
-An earlier shared-kernel route compiled nouveau (plus NVK for Vulkan) and the NVIDIA-open modules against a common kernel target; that established compilation only, and no nouveau runtime run exists on this hardware. Every measurement on this page is the NVIDIA-open route. The nouveau build notes are kept in [NVK-BUILD.md](NVK-BUILD.md) for the day someone exercises that route.
+An earlier shared-kernel route compiled nouveau (plus NVK for Vulkan) and the NVIDIA-open modules against a common kernel target; that established compilation only, and no nouveau runtime run exists on this hardware. Every measurement on this page is the NVIDIA-open route. Nouveau plus its GSP firmware and Mesa NVK are built (the 16K GSP page-table fix is built, untested on hardware); not exercised in these runs. Build notes: [NVK-BUILD.md](NVK-BUILD.md).
