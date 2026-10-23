@@ -37,7 +37,8 @@ All rows n=5, llama.cpp build `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, all 49
 | CUDA, Gemma-4-12B QAT Q4_0, flash attention on (toolkit 13.4.92, sm_120) | 2123.08 ± 24.18 | 49.83 ± 0.03 |
 | CUDA, Gemma-4-12B QAT Q4_0, flash attention off | 1732.39 ± 3.80 | 48.08 ± 0.05 |
 | CUDA, Qwen2.5-7B Q4_K_M (first smoke, n=3) | 2919.15 ± 37.74 | 81.46 ± 0.04 |
-| Vulkan or CUDA, Qwen3.8-27B | not run | not run |
+| Vulkan, Qwen3.8-27B Q4_0, flash attention on (n=3) | 673.27 ± 0.55 | 22.52 ± 0.06 |
+| CUDA, Qwen3.8-27B Q4_0, flash attention on (n=3) | 943.70 ± 10.33 | 24.63 ± 0.01 |
 
 Details and environment: [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md).
 
