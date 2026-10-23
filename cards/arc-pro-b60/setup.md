@@ -13,28 +13,24 @@ Common host setup, aperture checks and removal rules live in
 [hosts/apple-silicon/](../../hosts/apple-silicon/) and
 [docks/](../../docks/). This page covers only what is specific to this card.
 
-## Status (2026-10-22)
+## Status (updated 2026-10-23)
 
 | Host | Status | What is proven |
 |---|---|---|
 | x86 Omarchy desktop | **BLOCKED** (no recorded reference run) | The stock `xe` path is what x86 uses; we have run nothing on our own x86 hardware with this card |
 | 13-inch M1 MacBook Pro | **BLOCKED** (16K xe kernel not built or shipped) | Nothing. No attach, no bind, no firmware boot, no compute |
 | 14-inch M2 Max MacBook Pro | **BLOCKED** (same kernel gate) | Same |
-| 16-inch M1 Max MacBook Pro | **BLOCKED** (same kernel gate) | Same |
+| 16-inch M1 Max MacBook Pro | **MEASURED** (local patches, not upstream) | xe loads, ANV enumerates the card and llama.cpp Vulkan runs on it; hot-plug untested. See the [benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md) |
 | M6 Mac mini | **BLOCKED** (no recorded reference run; Thunderbolt host support for this machine is still in progress) | No M6-specific build or run of any kind |
 
 Two supporting facts, kept apart from the card itself:
 
-- **BUILT-UNTESTED, build stage only.** With our four-patch series the xe driver
-  compiled through `xe.o` on a 16K arm64 configuration. The full shared kernel
-  has not been built or linked, no package exists, nothing has been loaded, and
-  no card has been attached to any host. See [patches.md](patches.md).
+- **MEASURED on the 16-inch M1 Max.** The four-patch 16 KiB series builds and loads there. The measured run also needs local patches 0005 to 0014 (non-posted BAR mappings and buffer placement) and a local Apple PCIe change, none of them published. The shared kernel package does not carry any of this. See [patches.md](patches.md).
 - **MEASURED elsewhere, not on this card.** A dock's bridges and its USB and
   network endpoints enumerate over the PCIe tunnel on the 13-inch M1 under
   aurora. Transport enumeration is not a GPU run.
 
-No benchmark of any kind exists for this card on any host, and nothing on this
-page is a performance claim.
+One host has a benchmark record: the 16-inch M1 Max, in the [benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md). Nothing else on this page is a performance claim.
 
 ## Power
 
@@ -84,10 +80,9 @@ Known x86 wrinkle: community reports exist of this board downtraining its PCIe
 link to Gen1 x1 under `xe` on some systems. If bandwidth looks wrong, compare
 `LnkSta` in `lspci -vv` against the slot capability before blaming the card.
 
-## Apple Silicon path (unverified end to end)
+## Apple Silicon path
 
-Nothing in this section has run. It is the honest map of what would have to be
-true, in order.
+This section was written before the 2026-10-23 measured run on the 16-inch M1 Max and is kept as the map of what had to be true. Measured since, on that host: a local kernel with xe was built and booted (blocker 1); BAR0 is 16 MiB of registers and BAR2 is 256 MiB of VRAM (blocker 2); the 32 GiB resize cannot fit, and the run works with `xe.vram_bar_size=-1` and the 256 MiB window (blocker 3); VRAM BAR mappings must be non-posted, and CPU stores into them took an arm64 alignment fault until CPU-written buffers moved to system memory (blocker 4). Blockers 5 and 6 were not isolated. Details: the [required workarounds](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md#required-workarounds-measured).
 
 ### The 16K page constraint is the whole problem
 

@@ -33,7 +33,7 @@ ring mes_kiq_3.1.0 uses VM inv eng 14 on hub 0
 
 ## Inference, not measured cause
 
-The earlier MES KIQ ring timeout disappeared once the 64-bit window worked. Doorbell writes to BAR2 are the presumed mechanism; that causation was not isolated. Decode speed sits below what a native PCIe x16 host would give the same model, and CPU-touched buffers live in system memory behind the tunnel. Weight placement was not profiled.
+The earlier MES KIQ ring timeout disappeared once the 64-bit window worked. Doorbell writes to BAR2 are the presumed mechanism; that causation was not isolated. Decode speed sits below what a native PCIe x16 host would give the same model, and CPU-touched buffers live in system memory behind the tunnel. Weight placement was audited later: weights, KV cache and compute buffers are in VRAM (headline record), while RADV's shader arena was in system memory (its window l section).
 
 ## Not done
 

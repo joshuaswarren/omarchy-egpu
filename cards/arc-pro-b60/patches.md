@@ -1,6 +1,6 @@
 # Driver patches and upstream status: Arc Pro B60 (Battlemage, BMG-G21)
 
-State as of 2026-10-22. Read [setup.md](setup.md) for what the patches are for
+State as of 2026-10-23. Read [setup.md](setup.md) for what the patches are for
 and what is still blocked.
 
 ## Patches carried: four, experimental, upstream status none
@@ -46,14 +46,16 @@ licenses, and this repository's MIT license does not replace them.
 
 ## Status, precisely
 
-**BUILT-UNTESTED, build stage only.** With these patches applied, xe compiled
+**BUILT-UNTESTED for this directory's four-patch series on its own.** With these patches applied, xe compiled
 through `xe.o` on a 16K arm64 configuration. The full shared kernel (which also
 carries TTM, buddy, suballoc, GPUSVM, HMM and VMAP_PFN) has not been built or
 linked; a C-only diagnostic kernel was deliberately stopped before link and
 was never installable. The series applies cleanly with `git apply --check`
 against an aurora xe checkout; that is a text check, not a build.
 
-Not established at any point:
+The measured run on the 16-inch M1 Max (see the [benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md)) used these four patches plus local patches 0005 to 0014 and a local Apple PCIe change, none of them in this directory. It built a full local kernel, loaded xe, started the GuC and ran llama.cpp. That does not qualify the four-patch series in the shared kernel package.
+
+Not established for the four-patch series alone:
 
 - a final `xe.ko` link inside the shared kernel package,
 - a permitted no-card `modprobe`,
@@ -77,7 +79,7 @@ Two rejected fixes matter to anyone reading this file:
 - **MMIO mapping.** Honouring the non-posted resource flag for local memory is
   approved in principle, but the two-call version is incomplete:
   non-contiguous VRAM mappings and dma-buf export paths need separate work. No
-  speculative mapping change is carried.
+  speculative mapping change is carried in this directory. The local run's patch 0005 does map VRAM non-posted; it is private and not published.
 
 The barrier-mmap guard that rejects memory-mapped I/O on hosts with pages
 larger than 4 KiB is kept as is.
@@ -106,7 +108,4 @@ that disables Rust and skips BTF emission is not a kernel-package recipe.
 
 ## Next gate
 
-After the shared kernel is built and promoted: a no-card `modprobe xe`, then
-the first attach with a full capture of the kernel log, PCI topology, BAR sizes
-and parent bridge windows. Only once the card appears in `vulkaninfo` output
-with clean logs does anything in [ai.md](ai.md) become testable.
+The card now appears in `vulkaninfo` and runs llama.cpp on a local kernel with private patches. The next gate is cleaning those patches up for a kernel pull request, and then building and promoting the shared kernel with them. Nothing here is submitted upstream. Stacks in [ai.md](ai.md) other than llama.cpp Vulkan remain untested.

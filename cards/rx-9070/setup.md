@@ -86,7 +86,7 @@ None measured: no run of any kind exists for this card. The measured
 transport-level issues that any card hits behind the same dock (bus-range
 clipping on first hotplug, small-BAR exhaustion, minimum idle link training)
 are documented with verbatim excerpts in the
-[RX 7600 known issues](../rx-7600/setup.md#known-issues-all-measured-2026-10-22-unless-noted)
+[RX 7600 known issues](../rx-7600/setup.md#known-issues)
 and the [M2 Max host guide](../../hosts/m2-max/README.md). This card's own
 behavior stays unrecorded until a run exists; the logs will say it, we will
 not predict it.

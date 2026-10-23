@@ -1,6 +1,6 @@
 # Arc Pro B60 on a 16-inch M1 Max MacBook Pro: llama.cpp Vulkan, 2026-10-23
 
-MEASURED: llama.cpp inference ran on the external card through Intel's ANV Vulkan driver. The kernel log from driver load to the end of the runs shows no error, fault, SError, DART, or timeout line. A follow-up run with all 10 CPUs online (stock device tree) is the current reference on Qwen2.5-7B Q4_K_M: pp512 1026.81 ± 3.40 / tg128 20.64 ± 0.06 with flash attention off, and 1057.67 ± 73.17 / 24.45 ± 0.13 with it on. Decode varies 20 to 25 percent run to run on this setup (other lanes' jobs co-ran), so the single-core 22.29 below sits inside that spread; the 10-core boot did not change decode beyond it. Prompt processing rose to 1026.81-1097.61. Later the same day, moving the Intel driver's CPU-written buffers into VRAM lifted Llama-2-7B Q4_0 decode on this card from 18.89 to 65.96 t/s (fa1); see [the section below](#intel-driver-buffers-in-vram-2026-10-23). Those results need private driver patches that are not upstream.
+MEASURED: llama.cpp inference ran on the external card through Intel's ANV Vulkan driver. The kernel log from driver load to the end of the runs shows no error, fault, SError, DART, or timeout line. A follow-up run with all 10 CPUs online (stock device tree) is the reference for the stock buffer placement on Qwen2.5-7B Q4_K_M: pp512 1026.81 ± 3.40 / tg128 20.64 ± 0.06 with flash attention off, and 1057.67 ± 73.17 / 24.45 ± 0.13 with it on. Decode varies 20 to 25 percent run to run on this setup (other jobs co-ran), so the single-core 22.29 below sits inside that spread; the 10-core boot did not change decode beyond it. Prompt processing rose to 1026.81-1097.61. Later the same day, moving the Intel driver's CPU-written buffers into VRAM lifted Llama-2-7B Q4_0 decode on this card from 18.89 to 65.96 t/s (fa1); see [the section below](#intel-driver-buffers-in-vram-2026-10-23). Those results need private driver patches that are not upstream.
 
 | Test | Tokens per second |
 |---|---:|
@@ -13,7 +13,7 @@ Three repetitions, mean ± standard deviation, all model layers on the card.
 
 | Field | Value |
 |---|---|
-| Host | 16-inch M1 Max MacBook Pro, Omarchy Linux, 16 KiB pages, 1 CPU online |
+| Host | 16-inch M1 Max MacBook Pro, Omarchy Linux, 16 KiB pages, 1 CPU online (this first run; the later runs below used 10 CPUs) |
 | Kernel | `7.1.12` local build with unpublished xe patches |
 | Card | ASRock Intel Arc Pro B60 (Battlemage G21, 24 GiB), `8086:e211`, bound to xe 1.1.0 |
 | Chain | Host port, USB4/Thunderbolt cable, Sonnet Breakaway Box 850 T5 with its own 850 W supply |
@@ -25,10 +25,12 @@ Three repetitions, mean ± standard deviation, all model layers on the card.
 | Power | Not recorded. Link under load: not recorded |
 | Conditions | Scheduled probe window; one short correctness check before the timed runs |
 
+The correctness check at temperature 0 answered "The capital of France is Paris." at 91.7 t/s prompt and 10.1 t/s generation. `vulkaninfo --summary` reports `Intel(R) Arc(tm) Pro B60 Graphics (BMG G21)`, discrete, conformance 1.4.0.0, with 23.66 GiB device-local, 46.78 GiB system, and 256 MiB host-visible device-local heaps. `vkcube` did not run; no display was attached.
+
 
 ## 10-CPU rerun, 2026-10-23
 
-Boot with the stock device tree: all 10 cores online. On this machine the 64-bit prefetchable window needed two runtime steps for the test, both applied from the hub's own bridges: a write of 1 to the tunnel root port's prefetchable-window enable register (`PORT_PREFMEM_ENABLE`, which read 0), and bridge/BAR bus addresses equal to CPU addresses (the stock tree maps PCI `0x8_00000000` to CPU `0x10_00000000`). Same command shape as below. Qwen2.5-7B Q4_K_M, other lanes' background jobs co-running:
+Boot with the stock device tree: all 10 cores online. On this machine the 64-bit prefetchable window needed two runtime steps for the test, both applied from the hub's own bridges: a write of 1 to the tunnel root port's prefetchable-window enable register (`PORT_PREFMEM_ENABLE`, which read 0), and bridge/BAR bus addresses equal to CPU addresses (the stock tree maps PCI `0x8_00000000` to CPU `0x10_00000000`). Same command shape as below. Qwen2.5-7B Q4_K_M, other background jobs co-running:
 
 | Run | pp512 | tg128 |
 |---|---:|---:|
@@ -43,9 +45,7 @@ The 10-core boot did not lift decode beyond the 20-25 percent run-to-run spread,
 
 ## Cross-vendor small-op cost
 
-The same-command Llama-2-7B Q4_0 run on this card (10 CPUs) read pp512 974.84 / tg128 14.39 (fa0) and 1001.76 / 17.63 (fa1), with a measured ~23 us per tiny dispatch. The RX 7600 on its tunnel reads ~22 us per small op. Two vendors, two drivers, two hosts: the shared per-operation cost is measured on both sides, and the barrier/fence/translation explanation is a hypothesis. See the [cross-vendor section](2026-10-23-rx7600-m2max-model-sweep.md#cross-vendor-small-op-cost-2026-10-23) of the RX 7600 sweep.
-The correctness check at temperature 0 answered "The capital of France is Paris." at 91.7 t/s prompt and 10.1 t/s generation. `vulkaninfo --summary` reports `Intel(R) Arc(tm) Pro B60 Graphics (BMG G21)`, discrete, conformance 1.4.0.0, with 23.66 GiB device-local, 46.78 GiB system, and 256 MiB host-visible device-local heaps. `vkcube` did not run; no display was attached.
-
+The same-command Llama-2-7B Q4_0 run on this card (10 CPUs) read pp512 974.84 / tg128 14.39 (fa0) and 1001.76 / 17.63 (fa1), with a measured ~23 us per tiny dispatch. The RX 7600 on its tunnel reads ~22 us per small op. Two vendors, two drivers, two hosts: the shared per-operation cost is measured on both sides. Driver buffers that the CPU writes sit in system memory behind the tunnel on both cards, and moving them to VRAM removes much of the cost (the next section and the [RX 7600 window l section](2026-10-22-rx7600-m2max-llamacpp-vulkan.md#window-l-shader-placement-measured-abab-and-a-proposed-fix-2026-10-23)). The barrier explanation was a hypothesis; barrier flavours measured flat at about 3 us on the RX 7600. See the [cross-vendor section](2026-10-23-rx7600-m2max-model-sweep.md#cross-vendor-small-op-cost-2026-10-23) of the RX 7600 sweep.
 ## Intel driver buffers in VRAM, 2026-10-23
 
 MEASURED on the same 16-inch M1 Max chain with all 10 CPUs online, kernel `7.1.12-2-20261013.18-egpu-ARCH` with local xe patches 0005 to 0014 and the local Apple PCIe change, and ANV from Mesa 26.2.4 with a private build patch. llama.cpp `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, Vulkan, Llama-2-7B Q4_0 (the model of the [llama.cpp Vulkan discussion](https://github.com/ggml-org/llama.cpp/discussions/10879)), `-ngl 100 -r 3`, `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1`, same boot for every row.
@@ -109,7 +109,7 @@ The remaining driver buffers (internal surface states, dynamic state, batch buff
 
 ## Limits
 
-The first run used one CPU; the 10-CPU rerun above is the current reference, and decode did not move beyond its 20-25 percent run-to-run spread, so no number here is CPU-starved in a way that hides capacity - but that spread itself is unexplained. Hot-plug is untested. The 32 GiB BAR resize is impossible on this tunnel. The patches are local; kernel pull-request cleanup is next. After a card hang the device wedges and needs a reboot. The window workaround is re-applied after each boot until the kernel change lands.
+The first run used one CPU; the 10-CPU reruns and the driver-buffer section above are the current reference. In the stock-placement runs decode did not move beyond its 20-25 percent run-to-run spread, so no number here is CPU-starved in a way that hides capacity - but that spread itself is unexplained. Hot-plug is untested. The 32 GiB BAR resize is impossible on this tunnel. The patches are local; kernel pull-request cleanup is next. After a card hang the device wedges and needs a reboot. The window workaround is re-applied after each boot until the kernel change lands.
 
 ## Not measured
 
