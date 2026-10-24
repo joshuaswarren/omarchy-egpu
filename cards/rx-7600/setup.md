@@ -59,6 +59,8 @@ export GGML_VK_ALLOW_GRAPHICS_QUEUE=1
 
 Measured on the 14-inch M2 Max: decode +32 percent (fa0) and +22.5 percent (fa1) on Llama-2-7B Q4_0, prompt processing unchanged (see the [benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md)). The buffer placement behind it is now measured: with the default, the 256 KiB buffer that matches RADV's shader arena is in system memory (`GTT CPU_ACCESS_REQUIRED`); with `dmashaders` it is in VRAM. Window l re-measured the gain at +26 to +30 percent (fa0) and +20 to +22 percent (fa1) in an alternating test (see the [benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md)). Why that costs decode (instruction fetch across the tunnel) is inferred, not isolated.
 
+Graphics queue (`GGML_VK_ALLOW_GRAPHICS_QUEUE=1`), Llama-2-7B Q4_0, three repetitions, against the nogttspill,dmashaders baseline with MMVQ off: tg128 41.61 to 53.66 (+28.9 percent, fa0) and 45.18/45.36 to 56.29 (+24.3 percent, fa1); prompt processing 1021 to 987 (fa0) and 1269 to 1234 (fa1), about 3 percent lower. `RADV_DEBUG=nocompute` gave 54.02 and 56.91 (+29.8 and +25.6 percent) in the same test. Same machine and card only.
+
 ## Card and host constraints (Apple Silicon)
 
 Measured and source-read facts that decide what this card can do behind the
