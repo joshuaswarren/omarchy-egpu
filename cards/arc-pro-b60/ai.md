@@ -52,7 +52,7 @@ binary is not assumed to carry it.
 With an RTX 5060 Ti dock chained on the Sonnet's downstream port, the same
 boot measured (Llama-2-7B Q4_0, flash attention on): this card on Vulkan
 pp512 1482.52 ± 2.26, tg128 66.60 ± 0.01; split across both cards,
-Qwen3.5-27B Q4_0 ran pp512 453.46 ± 5.21, tg128 15.67 ± 2.17. The
+Qwen3.8-27B Q4_0 ran pp512 453.46 ± 5.21, tg128 15.67 ± 2.17. The
 dual-card topology needs the kernel command line to carry
 `hpmmioprefsize=256M` (with `hpmemsize=64M`) or the second card's BARs fail
 alignment assignment. Full record: [dual-card

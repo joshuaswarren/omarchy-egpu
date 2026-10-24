@@ -52,7 +52,7 @@ With the Arc Pro B60 in a Sonnet Breakaway enclosure and this card's dock
 chained on its downstream port, the same boot measured (Llama-2-7B Q4_0,
 flash attention on): CUDA pp512 3132.07 ± 33.51, tg128 97.78 ± 0.05;
 Vulkan pp512 2478.46 ± 1.49, tg128 84.92 ± 0.07. Split across both cards,
-Qwen3.5-27B Q4_0 ran pp512 453.46 ± 5.21, tg128 15.67 ± 2.17. The
+Qwen3.8-27B Q4_0 ran pp512 453.46 ± 5.21, tg128 15.67 ± 2.17. The
 dual-card topology needs one more kernel command-line knob
 (`hpmmioprefsize=256M`) or this card's prefetchable BARs fail alignment
 assignment. Full record: [dual-card record](../../benchmarks/2026-10-24-dualcard-b60-5060ti-m1max.md).

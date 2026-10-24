@@ -16,3 +16,6 @@ Plus the registry key from [setup.md](setup.md) (`RmForceDisableIomapWC=1`), whi
 ## Upstream status
 
 No NVIDIA contribution existed before these two fixes. NVIDIA requires a CLA on contributions to their repository.
+The CLA is signed (October 2026). PRs #1480, #1481 and #1482 are open and
+awaiting maintainer review; none had a maintainer response at publication
+time.
