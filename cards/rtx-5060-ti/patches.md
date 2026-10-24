@@ -9,6 +9,8 @@ Two local source changes to NVIDIA open modules 595.112.07 make the module load 
 
 Fix (b), the page-size fix - the one proven on hardware - is submitted upstream as [open-gpu-kernel-modules PR #1480](https://github.com/NVIDIA/open-gpu-kernel-modules/pull/1480) (open). Fix (a), the submap-alignment correction - source-derived, not exercised on this hardware - is submitted as [open-gpu-kernel-modules PR #1481](https://github.com/NVIDIA/open-gpu-kernel-modules/pull/1481) (open; the PR states the derivation).
 
+A third change is submitted upstream: [open-gpu-kernel-modules PR #1482](https://github.com/NVIDIA/open-gpu-kernel-modules/pull/1482) (open) adds a chipset-table entry for the Apple Thunderbolt/USB4 tunnel root port (`106b:100f`) that sets the same write-combining disable the registry key provides. Hardware-tested on a local 595.112.07 branch build WITH this entry and WITHOUT the registry key: no "Chipset not recognized" line, `nvidia-smi` healthy, CUDA allocation succeeds, and llama.cpp CUDA Gemma-4-12B (n=2, fa1) reads pp512 2066.22 ± 39.09 and tg128 49.88 ± 0.03 with zero Xid lines. n=1, one machine, 595 branch build. With this patch (our local build now, upstream once merged) the registry key is not needed on this host; until it merges, the key stays the documented workaround.
+
 Plus the registry key from [setup.md](setup.md) (`RmForceDisableIomapWC=1`), which is a load option, not a patch.
 
 ## Upstream status
