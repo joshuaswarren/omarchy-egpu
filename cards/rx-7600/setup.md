@@ -53,6 +53,7 @@ Once the driver is running, export this before any llama.cpp Vulkan run:
 
 ```bash
 export RADV_PERFTEST=nogttspill,dmashaders
+export GGML_VK_DISABLE_MMVQ=1
 export GGML_VK_ALLOW_GRAPHICS_QUEUE=1
 ```
 
