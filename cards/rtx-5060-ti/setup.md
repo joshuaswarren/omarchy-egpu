@@ -46,6 +46,17 @@ A lever A/B on this card and model (CUDA graphs, KV cache type) says: keep
 the defaults (CUDA graphs on, f16 KV); q8_0 KV only for VRAM headroom, at a
 speed cost (about 10 percent decode on Gemma-4-12B).
 
+### Same-boot dual-card (both eGPUs on one tunnel)
+
+With the Arc Pro B60 in a Sonnet Breakaway enclosure and this card's dock
+chained on its downstream port, the same boot measured (Llama-2-7B Q4_0,
+flash attention on): CUDA pp512 3132.07 ± 33.51, tg128 97.78 ± 0.05;
+Vulkan pp512 2478.46 ± 1.49, tg128 84.92 ± 0.07. Split across both cards,
+Qwen3.8-27B Q4_0 ran pp512 453.46 ± 5.21, tg128 15.67 ± 2.17. The
+dual-card topology needs one more kernel command-line knob
+(`hpmmioprefsize=256M`) or this card's prefetchable BARs fail alignment
+assignment. Full record: [dual-card record](../../benchmarks/2026-10-24-dualcard-b60-5060ti-m1max.md).
+
 ## The nouveau route (not part of these runs)
 
 An earlier shared-kernel route compiled nouveau (plus NVK for Vulkan) and the NVIDIA-open modules against a common kernel target; that established compilation only, and no nouveau runtime run exists on this hardware. Every measurement on this page is the NVIDIA-open route. Nouveau plus its GSP firmware and Mesa NVK are built (the 16K GSP page-table fix is built, untested on hardware); not exercised in these runs. Build notes: [NVK-BUILD.md](NVK-BUILD.md).

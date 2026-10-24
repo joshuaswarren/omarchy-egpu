@@ -47,6 +47,17 @@ Build llama.cpp with the Vulkan backend per
 [recipes/llama-cpp-vulkan.md](../../recipes/llama-cpp-vulkan.md); the packaged
 binary is not assumed to carry it.
 
+### Same-boot dual-card (both eGPUs on one tunnel)
+
+With an RTX 5060 Ti dock chained on the Sonnet's downstream port, the same
+boot measured (Llama-2-7B Q4_0, flash attention on): this card on Vulkan
+pp512 1482.52 ± 2.26, tg128 66.60 ± 0.01; split across both cards,
+Qwen3.8-27B Q4_0 ran pp512 453.46 ± 5.21, tg128 15.67 ± 2.17. The
+dual-card topology needs the kernel command line to carry
+`hpmmioprefsize=256M` (with `hpmemsize=64M`) or the second card's BARs fail
+alignment assignment. Full record: [dual-card
+record](../../benchmarks/2026-10-24-dualcard-b60-5060ti-m1max.md).
+
 Expect obstacles before speed. The measured run mapped a 256 MiB BAR for 24 GiB of VRAM, because the 32 GiB resize cannot fit the tunnel window. Weights stayed in VRAM only when the kernel reported that real 256 MiB window; the stock write-combined mapping and CPU-written buffers needed local patches (see the benchmark record). The device DMA clamp to the tunnel aperture is still source-defined and unmeasured (see the IOVA note in [setup.md](setup.md)).
 
 ## Honesty box
