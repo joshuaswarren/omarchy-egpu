@@ -42,6 +42,10 @@ All rows n=5, llama.cpp build `65840ed53c8653bfbf3e9014d9cbf71ac8c08725`, all 49
 
 Details and environment: [benchmark record](../../benchmarks/2026-10-23-5060ti-m1max-nvidia.md).
 
+A lever A/B on this card and model (CUDA graphs, KV cache type) says: keep
+the defaults (CUDA graphs on, f16 KV); q8_0 KV only for VRAM headroom, at a
+speed cost (about 10 percent decode on Gemma-4-12B).
+
 ## The nouveau route (not part of these runs)
 
 An earlier shared-kernel route compiled nouveau (plus NVK for Vulkan) and the NVIDIA-open modules against a common kernel target; that established compilation only, and no nouveau runtime run exists on this hardware. Every measurement on this page is the NVIDIA-open route. Nouveau plus its GSP firmware and Mesa NVK are built (the 16K GSP page-table fix is built, untested on hardware); not exercised in these runs. Build notes: [NVK-BUILD.md](NVK-BUILD.md).
