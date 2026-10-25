@@ -2,13 +2,13 @@
 
 ## Patch series: submitted
 
-The kernel work is open as [omacom/linux-aurora PR #188](https://github.com/omacom/linux-aurora/pull/188), head `654075e5` (10 commits on `integration/aurora`): the amdgpu changes, identity `ranges` entries for the tunnel windows of the T600x/T602x families, a link-wait fix, and a tunnel root-port prefetchable-window enable fix. The PR is open and not merged, so no part of it is upstream. Local checks: all commits signed off, checkpatch clean, amdgpu/TTM/pcie-apple objects compile with LLVM 22 `W=1` (one pre-existing frame-size warning), and the T600x/T602x DTBs build showing identity ranges. The PR states the runtime proof comes from the same logic on the 7.1.12 tree; the 7.2.11 tree itself has not been booted on hardware, and hot-plug is untested.
+The kernel work is open as [omacom/linux-aurora PR #188](https://github.com/omacom/linux-aurora/pull/188), head `654075e5` (10 commits on `integration/aurora`): the amdgpu changes, identity `ranges` entries for the tunnel windows of the T600x/T602x families, a link-wait fix, and a tunnel root-port prefetchable-window enable fix. The PR is open and not merged, so no part of it is upstream. Local checks: all commits signed off, checkpatch clean, amdgpu/TTM/pcie-apple objects compile with LLVM 22 `W=1` (one pre-existing frame-size warning), and the T600x/T602x DTBs build showing identity ranges. The PR states the runtime proof comes from the same logic on the 7.1.12 tree; the 7.2.11 tree itself has not been booted on hardware. An earlier hot-plug transport probe needed a bridge-removal and rescan workaround; that does not qualify this tree.
 
 The local changes do three things. They handle Device-memory accesses during initialization. They move userspace buffers that fault on a non-posted BAR to system memory. Together with the device-tree window fix, they let the driver initialize every ring and run Vulkan compute. See the [measured host result](../../hosts/m2-max/README.md) and the [benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md).
 
 The earlier unmodified module package passed strict modpost against source [aurora-silicon/linux `6f636777`](https://github.com/aurora-silicon/linux/commit/6f63677751854d57bcfac172314957bc2197c05f), targeting `7.1.12-2-20261013.18-sep-ARCH`. That build result is separate from the locally patched driver that produced the working run on `7.1.12-2-20261013.18-egpu-ARCH`.
 
-Do not treat the module build or the working run as a complete shared-kernel qualification. The result depends on unpublished changes, covers one card on one host, and has not been exercised with hot-plug.
+Do not treat the module build or the working run as a complete shared-kernel qualification. The result depends on unpublished changes and covers one card on one host. The earlier hot-plug workaround is documented in the [transport record](../../benchmarks/2026-10-22-rx7600-14in-m2max-transport.md), not a plug-and-play qualification.
 
 ## Proposed Mesa change: not yet submitted
 
