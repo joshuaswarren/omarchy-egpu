@@ -1,6 +1,6 @@
 # Local AI on the RX 9070 (Navi 48, `gfx1201`, 16 GB)
 
-No run of any kind exists on this card in our lab. Everything below is
+No run of any kind exists on this card here. Everything below is
 applicability per upstream documentation, not measurement.
 
 
@@ -23,4 +23,4 @@ The RX 9070 has 16 GB VRAM. The model, context, KV cache and runtime buffers mus
 
 ## Honesty box
 
-- No compute run exists on this card anywhere in our lab.
+- We have not run compute workloads on this card.

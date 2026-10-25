@@ -41,4 +41,4 @@ measured decode rate already reflects the USB4/PCIe tunnel.
 - One stack (llama.cpp Vulkan) has measured results for several models on one host. No other combination is proven.
 - No ROCm, Ollama, vLLM or tinygrad run exists on this card.
 - The matched macOS Metal baseline from the [method](../../benchmarks/method.md) has not run; no cross-machine ratio is claimed.
-- The working run required unpublished changes. Reproduction beyond the lab is not yet possible.
+- The working run required unpublished changes. Reproduction on a stock system is not yet possible.

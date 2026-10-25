@@ -114,8 +114,8 @@ The full script - cbindgen install, configure, compile, install - ran in
 earlier Mesa builds on the host; treat that as a warm-cache number, not a
 cold-tree build time. Staged install footprint: 22 MB
 `libvulkan_nouveau.so` (sha256 `de2c64cd…40664`), 333 MB build tree,
-932 MB total including the rustup/cargo trees. On-disk evidence and the probe
-transcripts live in the private lab notebook.
+932 MB total including the rustup/cargo trees. Keep the probe transcripts and the installed artifacts if you need to reproduce
+the result.
 
 ## The rest of the path to a device
 

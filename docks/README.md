@@ -28,7 +28,7 @@ Sonnet lists RTX 50/40/30 and RX 9000/7000/6000 series, but does not list Arc Pr
 
 ## UT3G transport boundary
 
-The [UT3G vendor specification](https://www.adt.link/product/UT3G.html) requires a Thunderbolt 3/4 or USB4 host. Its Q&A explicitly excludes USB 2.0 and USB 3.0/3.1/3.2. Receipt of the board does not establish a tinygrad USB3 path. The exact board revision, bridge firmware, and tinygrad compatibility still need verification.
+The [UT3G vendor specification](https://www.adt.link/product/UT3G.html) requires a Thunderbolt 3/4 or USB4 host. Its Q&A explicitly excludes USB 2.0 and USB 3.0/3.1/3.2. Owning the board does not establish a tinygrad USB3 path. The exact board revision, bridge firmware, and tinygrad compatibility still need verification.
 
 The UT3G uses external ATX power. The Sonnet has its own supply. Do not treat their power wiring as interchangeable. This repository does not authorize or perform a bridge firmware flash.
 

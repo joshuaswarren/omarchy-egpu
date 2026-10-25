@@ -29,14 +29,14 @@ enclosure or dock with a real PCIe slot, card. See
   Community setup notes put the practical floor at kernel 6.13.5 or newer with
   current `linux-firmware` and Mesa 25
   ([Level1Techs forum](https://forum.level1techs.com/t/9070-and-9070-xt-setup-notes-for-linux/227038)).
-- **Driver on Apple Silicon hosts:** the published Omarchy kernel package
-  `linux-aurora` 7.2.10-2 sets `# CONFIG_DRM_AMDGPU is not set` in its config
+- On Apple Silicon hosts, the published Omarchy kernel package
+  `linux-aurora` 7.2.11 sets `# CONFIG_DRM_AMDGPU is not set` in its config
   ([omacom/omarchy-pkgs](https://github.com/omacom/omarchy-pkgs/blob/master/pkgbuilds/linux-aurora/config),
-  read 2026-10-22). An amdgpu module package has been built against the
-  lab-pinned kernel (status in [rx-7600/patches.md](../rx-7600/patches.md))
+  read 2026-10-25). An amdgpu module package has been built against the
+  patched kernel (status in [rx-7600/patches.md](../rx-7600/patches.md))
   and has never been run against a `gfx1201` device.
 - RADV (Vulkan) supports `gfx1201` in Mesa 25+; `vulkan-radeon` 26.2.5-1
-  exists for aarch64 in Arch Linux ARM (checked 2026-10-22).
+  exists for aarch64 in Arch Linux ARM (re-checked 2026-10-25).
 - ROCm officially supports the RX 9070 for compute since ROCm 6.4.1
   ([release notes](https://rocm.docs.amd.com/en/docs-6.4.1/about/release-notes.html)),
   x86_64 Linux only.
@@ -49,7 +49,7 @@ Same package set as the [RX 7600](../rx-7600/setup.md#packages):
 pacman -S linux-firmware-amdgpu linux-firmware-whence vulkan-radeon vulkan-icd-loader vulkan-tools
 ```
 
-At the published kernel revision 7.2.10-2 the config leaves
+At the published kernel revision 7.2.11 the config leaves
 `CONFIG_DRM_AMDGPU` off, so these packages alone do not give you a driver;
 current status of that prerequisite: [rx-7600/patches.md](../rx-7600/patches.md).
 

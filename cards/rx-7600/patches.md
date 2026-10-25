@@ -2,7 +2,7 @@
 
 ## Patch series: submitted
 
-The kernel work is open as [omacom/linux-aurora PR #188](https://github.com/omacom/linux-aurora/pull/188), head `3f5c88fa` (10 commits on `integration/aurora`): the amdgpu changes, identity `ranges` entries for the tunnel windows of the T600x/T602x families, a link-wait fix, and a tunnel root-port prefetchable-window enable fix. It replaces PR #184, which carried the same head and was closed when its branch was deleted by mistake. The PR is open and not merged, so no part of it is upstream. A reviewer passed this full head on PR #184. Local checks: all commits signed off, checkpatch clean, amdgpu/TTM/pcie-apple objects compile with LLVM 22 `W=1` (one pre-existing frame-size warning), and the T600x/T602x DTBs build showing identity ranges. The PR states the runtime proof comes from the same logic on the 7.1.12 tree; the 7.2.11 tree itself has not been booted on hardware, and hot-plug is untested.
+The kernel work is open as [omacom/linux-aurora PR #188](https://github.com/omacom/linux-aurora/pull/188), head `654075e5` (10 commits on `integration/aurora`): the amdgpu changes, identity `ranges` entries for the tunnel windows of the T600x/T602x families, a link-wait fix, and a tunnel root-port prefetchable-window enable fix. The PR is open and not merged, so no part of it is upstream. Local checks: all commits signed off, checkpatch clean, amdgpu/TTM/pcie-apple objects compile with LLVM 22 `W=1` (one pre-existing frame-size warning), and the T600x/T602x DTBs build showing identity ranges. The PR states the runtime proof comes from the same logic on the 7.1.12 tree; the 7.2.11 tree itself has not been booted on hardware, and hot-plug is untested.
 
 The local changes do three things. They handle Device-memory accesses during initialization. They move userspace buffers that fault on a non-posted BAR to system memory. Together with the device-tree window fix, they let the driver initialize every ring and run Vulkan compute. See the [measured host result](../../hosts/m2-max/README.md) and the [benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md).
 
@@ -38,7 +38,7 @@ Status: proposed upstream fix, not yet submitted. It has not been posted to Mesa
 
 ## Published package boundary
 
-The inspected `linux-aurora` 7.2.10-2 [package config](https://github.com/omacom/omarchy-pkgs/blob/master/pkgbuilds/linux-aurora/config) has `CONFIG_DRM_AMDGPU` disabled, as read on 2026-10-22. Installing firmware and RADV alone does not add that kernel driver. The local experimental build does not change this published-package observation.
+The inspected `linux-aurora` 7.2.11 [package config](https://github.com/omacom/omarchy-pkgs/blob/master/pkgbuilds/linux-aurora/config) has `CONFIG_DRM_AMDGPU` disabled, as read on 2026-10-25. Installing firmware and RADV alone does not add that kernel driver. The local experimental build does not change this published-package observation.
 
 amdgpu has no Kconfig host-page-size dependency. Its 4 KiB GPU pages differ from the 16 KiB host pages. The working run is evidence the portability gap was not page size; the blockers were the device-tree window and Device-memory access rules.
 

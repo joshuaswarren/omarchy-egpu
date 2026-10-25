@@ -27,7 +27,7 @@ Power rules:
 On Apple Silicon hosts (aarch64, 16 KiB-page kernel):
 
 ```bash
-# firmware for the card (absent on our lab hosts, checked 2026-10-16)
+# firmware for the card (absent on these hosts, checked 2026-10-16)
 sudo pacman -S linux-firmware-amdgpu linux-firmware-whence
 # userspace Vulkan stack
 sudo pacman -S vulkan-radeon vulkan-icd-loader vulkan-tools
@@ -36,12 +36,12 @@ sudo pacman -S pciutils bolt
 ```
 
 `vulkan-radeon` 26.2.5-1 and `linux-firmware-amdgpu` 20260916-1 exist for
-aarch64 in Arch Linux ARM (checked 2026-10-22).
+aarch64 in Arch Linux ARM (re-checked 2026-10-25).
 
-**Driver:** the published Omarchy kernel package `linux-aurora` 7.2.10-2 sets
+**Driver:** the published Omarchy kernel package `linux-aurora` 7.2.11 sets
 `# CONFIG_DRM_AMDGPU is not set` in its config
 ([omacom/omarchy-pkgs](https://github.com/omacom/omarchy-pkgs/blob/master/pkgbuilds/linux-aurora/config),
-read 2026-10-22). A host running that revision enumerates the card but cannot
+read 2026-10-25). A host running that revision enumerates the card but cannot
 bind a driver. Current driver status is in [patches.md](patches.md).
 
 On x86 Omarchy the kernel already carries amdgpu; the firmware and Vulkan
