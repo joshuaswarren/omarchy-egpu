@@ -26,6 +26,9 @@ GGML_VK_VISIBLE_DEVICES=0 llama-bench -m qwen2.5-7b-instruct-q4_k_m-00001-of-000
 ```
 
 On Apple Silicon eGPU hosts, exporting `RADV_PERFTEST=nogttspill,dmashaders` first raises decode (see the [setup note](setup.md#decode-environment-setting-apple-silicon-egpu-hosts)).
+The Vulkan queue-selection behavior behind `GGML_VK_ALLOW_GRAPHICS_QUEUE` is
+filed upstream with the reproduction as [llama.cpp discussion
+#31096](https://github.com/ggml-org/llama.cpp/discussions/31096) (open).
 This command works only with the patched driver loaded and the device-tree
 window fixed. Until those changes ship in a package, treat it as the
 measurement procedure, not a setup path. The [shared Vulkan
