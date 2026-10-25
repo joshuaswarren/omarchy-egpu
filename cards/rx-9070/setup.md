@@ -1,8 +1,9 @@
 # RX 9070 setup
 
 Practical setup for the ASRock RX 9070 Challenger 16GB. Status and identity
-live in [README.md](README.md). This card has never been attached on our
-hardware; nothing here is a performance claim or a prediction of its behavior.
+live in [README.md](README.md). This card has been attached to one host, the 14-inch M2 Max (see the
+[benchmark record](../../benchmarks/2026-10-25-rx9070-m2max-llamacpp-vulkan.md)); nothing here is a performance claim
+beyond that record.
 
 ## Hardware and power
 
@@ -33,8 +34,8 @@ enclosure or dock with a real PCIe slot, card. See
   `linux-aurora` 7.2.10-2 sets `# CONFIG_DRM_AMDGPU is not set` in its config
   ([omacom/omarchy-pkgs](https://github.com/omacom/omarchy-pkgs/blob/master/pkgbuilds/linux-aurora/config),
   read 2026-10-22). An amdgpu module package has been built against the
-  lab-pinned kernel (status in [rx-7600/patches.md](../rx-7600/patches.md))
-  and has never been run against a `gfx1201` device.
+  lab-pinned kernel (status in [rx-7600/patches.md](../rx-7600/patches.md));
+  on 2026-10-25 that module loaded and initialized a `gfx1201` card on the M2 Max.
 - RADV (Vulkan) supports `gfx1201` in Mesa 25+; `vulkan-radeon` 26.2.5-1
   exists for aarch64 in Arch Linux ARM (checked 2026-10-22).
 - ROCm officially supports the RX 9070 for compute since ROCm 6.4.1
@@ -82,14 +83,17 @@ lspci -nn -d 1002:    # expect 1002:7550 plus an audio function
 
 ## Known issues
 
-None measured: no run of any kind exists for this card. The measured
+Measured on this card, one host: the 16 GiB resizable BAR is not available
+(the tunnel window is 8 GiB and the card keeps its 256 MiB BAR), and decode
+is limited by a per-dispatch cost of 40 to 50 us (see the
+[README](README.md#why-decode-is-dispatch-bound-on-this-setup)). The measured
 transport-level issues that any card hits behind the same dock (bus-range
 clipping on first hotplug, small-BAR exhaustion, minimum idle link training)
 are documented with verbatim excerpts in the
 [RX 7600 known issues](../rx-7600/setup.md#known-issues)
 and the [M2 Max host guide](../../hosts/m2-max/README.md). This card's own
-behavior stays unrecorded until a run exists; the logs will say it, we will
-not predict it.
+behavior beyond that stays unrecorded; the logs will say it, we will not
+predict it.
 
 ## First-run requirements
 

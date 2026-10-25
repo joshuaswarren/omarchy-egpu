@@ -10,10 +10,12 @@ package built for the [RX 7600](../rx-7600/patches.md) compiles the whole
 amdgpu driver set from unmodified sources, so this card's target is inside
 what it compiles.
 
-**Not proven for this card:** the module package passed strict `modpost` on
-2026-10-22, but it has never been installed, loaded, or run against a
-`gfx1201` device. That is BUILT-UNTESTED for the module package and BLOCKED
-(no attach attempted) for the card.
+**Measured on one host:** the module package passed strict `modpost` on
+2026-10-22. On 2026-10-25 the same module (SHA-256 `1388ccac…`) loaded on the
+14-inch M2 Max and initialized the `gfx1201` card: rings up, the driver's own
+VRAM test passed, and llama.cpp ran (see the
+[benchmark record](../../benchmarks/2026-10-25-rx9070-m2max-llamacpp-vulkan.md)). That used the local kernel and device-tree
+changes described on the RX 7600 page. Nothing is proven on another host.
 
 ## Upstream status that gates this card
 
