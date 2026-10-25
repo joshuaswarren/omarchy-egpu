@@ -110,7 +110,7 @@ A software renderer or the integrated Apple GPU does not qualify.
 1. **Stock BAR reads fail; the working run needed a device-tree fix.** Normal boots assign BAR0, BAR2, BAR5 and audio without a rescan. Before the fix, every CPU read of the 64-bit BAR0/BAR2 window returned all-ones while BAR5 worked. Changing the tunnel node's `ranges` entry to an identity mapping made the window work.
 2. **Device-memory access needs care.** Tunnel BARs map as Device-nGnRnE. Ordinary `memset`, wide or unaligned stores, and struct copies took alignment faults. Mapping the BAR Normal-NC instead hung the host; do not use that as a workaround.
 3. **Userspace mappings can fault.** A Vulkan driver `memcpy` into a VRAM buffer hit SIGBUS until a local change moved faulting buffers to system memory. That change is unpublished.
-4. **GFX now initializes after the window fix.** All rings register, RADV enumerates the card, and llama.cpp runs. Hot-plug, the 8 GiB BAR resize, and a display run remain untested.
+4. **GFX now initializes after the window fix.** All rings register, RADV enumerates the card, and llama.cpp runs. A hot-plug attempt needed a bridge-removal and rescan workaround. The 8 GiB BAR resize and a display run remain untested.
 5. **Firmware and driver packages remain separate prerequisites.** Firmware alone cannot add amdgpu to a kernel built without it. The local test build is not a released package.
 
 The [host guide](../../hosts/m2-max/README.md) contains the measured stages, the decisive device-tree window fix, diagnostic output, and the historical rescan safety notes.

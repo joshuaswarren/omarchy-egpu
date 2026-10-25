@@ -11,9 +11,11 @@ of 2026-10-23:
 
 - **RX 7600**: runs local inference on a 14-inch M2 Max. llama.cpp on Vulkan
   keeps 86 percent of native prompt processing and about 66 percent of native
-  decode over USB4 with the driver tuning in its [card guide](cards/rx-7600/).
+  decode compared with a community native-PCIe thread, using the driver tuning
+  in its [card guide](cards/rx-7600/). Default decode was about 50 percent.
   Requires unpublished kernel and device-tree changes; not yet reproducible on
-  a stock system. Hot-plug is untested (the card was attached at boot).
+  a stock system. A hot-plug attempt needed a bridge-removal and rescan workaround;
+  see the [transport record](benchmarks/2026-10-22-rx7600-14in-m2max-transport.md).
 - **Arc Pro B60**: runs llama.cpp on Vulkan on a 16-inch M1 Max with local
   `xe` and ANV patches. Qwen3.8-27B Q4_0 (unsloth) runs fully on the card
   (66 of 66 layers) at pp512 428.04 / tg128 17.28 t/s. See its
@@ -64,7 +66,7 @@ observed failure. An untested cell does not mean the hardware cannot work.
 
 | Card | 13-inch M1 MacBook Pro | 16-inch M1 Max MacBook Pro | 14-inch M2 Max MacBook Pro | M6 Mac mini | x86 Omarchy |
 |---|---|---|---|---|---|
-| RX 7600 8GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | MEASURED: amdgpu loads with all rings; llama.cpp Vulkan runs (Qwen2.5-7B Q4_K_M pp512 945.8-967.6, tg128 28.9-31.9 t/s across boots; Llama-2-7B Q4_0 tg128 38.0-38.2 with the `dmashaders` setting); needs local device-tree and kernel changes; hot-plug untested | BLOCKED: host transport support | BLOCKED: no reference run recorded |
+| RX 7600 8GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | MEASURED: amdgpu loads with all rings; llama.cpp Vulkan runs (Qwen2.5-7B Q4_K_M pp512 945.8-967.6, tg128 28.9-31.9 t/s across boots; Llama-2-7B Q4_0 tg128 38.0-38.2 with the `dmashaders` setting); needs local device-tree and kernel changes; hot-plug required a bridge-removal and rescan workaround | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | RX 9070 16GB | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | BLOCKED: no GPU runtime proof | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | Arc Pro B60 24GB | BLOCKED: xe 4K-page requirement | MEASURED: llama.cpp Vulkan runs on a 10-CPU boot; Qwen3.8-27B runs fully on the card (66 of 66 layers) at pp512 428.04 / tg128 17.28 t/s; numbers, quant variants, and the required local xe patches are in the [B60 record](benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md) and [card guide](cards/arc-pro-b60/); hot-plug untested | BLOCKED: no GPU runtime proof | BLOCKED: host transport support | BLOCKED: no reference run recorded |
 | RTX 5060 Ti 16GB | not run on this host | MEASURED: NVIDIA open 595.112.07 loads (16K fix), CUDA and Vulkan run; Gemma-4-12B tg128 44.88 Vulkan / 49.83 CUDA; Qwen3.8-27B 22.52 Vulkan / 24.63 CUDA | not run on this host | not run on this host | not run on this host |
@@ -82,8 +84,8 @@ their card guides; the matrix reports runtime readiness.
 - Nothing here is reproducible on a stock Omarchy install yet. Each measured
   run depends on the local patches listed in its card guide; no patch is
   described as upstream unless a public merge proves it.
-- Hot-plug is untested everywhere; every measured run attached the card at
-  boot.
+- The RX 7600 hot-plug attempt needed a bridge-removal and rescan workaround.
+  Hot-plug remains untested for the other cards; this is not plug-and-play support.
 - MLX support on an integrated Apple GPU does not establish support for an
   external AMD, Intel, or NVIDIA card. Retain the integrated GPU's driver and
   Vulkan ICD.

@@ -20,7 +20,7 @@ observed failure.
 
 | Host | Stage | Evidence |
 |---|---|---|
-| 14-inch M2 Max MacBook Pro | **MEASURED:** amdgpu initializes all rings, RADV enumerates the card, and llama.cpp Vulkan runs on it. Numbers in the benchmark record. Reproduction requires unpublished local driver and device-tree changes; hot-plug untested | [Benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md), [host result](../../hosts/m2-max/README.md) |
+| 14-inch M2 Max MacBook Pro | **MEASURED:** amdgpu initializes all rings, RADV enumerates the card, and llama.cpp Vulkan runs on it. Numbers in the benchmark record. Reproduction requires unpublished local driver and device-tree changes; a hot-plug attempt needed a bridge-removal and rescan workaround | [Benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md), [host result](../../hosts/m2-max/README.md) |
 | 13-inch M1 MacBook Pro | **BLOCKED**: no amdgpu in the kernel build that host runs (checked 2026-10-16); no attach attempted | [setup.md](setup.md) |
 | 16-inch M1 Max MacBook Pro | **BLOCKED**: no attach attempted, no run | |
 | x86 Omarchy | **BLOCKED**: no reference run recorded on our x86 hosts | |
