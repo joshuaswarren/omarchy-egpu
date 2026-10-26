@@ -8,7 +8,7 @@ All three boots used the same local kernel and amdgpu module, the same llama.cpp
 
 | Item | Value |
 |---|---|
-| Host | 14-inch M2 Max MacBook Pro (2023), aarch64, Arch Linux ARM, 16 KiB pages |
+| Host | 14-inch M2 Max MacBook Pro, aarch64, Omarchy Linux, 16 KiB pages |
 | Kernel | `7.1.12-2-20261013.18-egpu-ARCH`, local changes as described on the [RX 9070 patches page](../cards/rx-9070/patches.md) |
 | amdgpu module | SHA-256 `1388ccacb751cb680608b517d8f3e0d62551a9d454c5f5e4ad08709b39e3eb3e`, loaded with no parameters; all four local parameters at their defaults |
 | GPU | RX 9070 (Navi 48, `1002:7550`), 16304 MiB VRAM |
@@ -17,7 +17,7 @@ All three boots used the same local kernel and amdgpu module, the same llama.cpp
 | Model | Qwen2.5-7B-Instruct Q4_K_M, two GGUF parts, part 1 SHA-256 `dfce12e3862a5283ccfb88221b48480e58745165de856439950d0f22590580db` |
 | Measurement | `llama-bench -p 0 -n 128 -r 3 -ngl 99 -fa 1`, test `tg128`; each value below is one `llama-bench` run (its own 3-repeat mean) |
 | Arms | A: `RADV_PERFTEST` unset (`env -u`). N: `nogttspill`. D: `dmashaders`. B: `nogttspill,dmashaders` |
-| Before timing | Output check: `llama-cli --temp 0 --seed 1 -n 64`, same prompt, text equal across arms (hash `51287c6e…` on all three boots). The flag names must appear in the loaded library. |
+| Before timing | Output check: `llama-cli --temp 0 --seed 1 -n 64`, same prompt, text equal across arms (hash `51287c6e…` on all three boots). The flag names must appear in the loaded library (split run only). |
 
 ## Rule fixed before the split run
 

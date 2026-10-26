@@ -103,7 +103,7 @@ For llama.cpp Vulkan decode on this card, set one variable for the launch of the
 RADV_PERFTEST=dmashaders llama-bench -m MODEL.gguf -p 0 -n 128 -r 3 -ngl 99 -fa 1
 ```
 
-Measured on the 14-inch M2 Max with the local kernel and module (see [patches.md](patches.md)): Qwen2.5-7B Q4_K_M decode (tg128) 24.78 to 32.87 tok/s, +32.6 percent, in a four-arm balanced run; the pair `nogttspill,dmashaders` gave +28.1, +27.3 and +32.6 percent on three boots. `nogttspill` added nothing on top of `dmashaders`, so the setting here is `dmashaders` alone. Method, per-run values, the 256 MiB visible-VRAM and link readings, and everything the run does not show are in the [benchmark record](../../benchmarks/2026-10-26-rx9070-m2max-radv-perftest.md).
+Measured on the 14-inch M2 Max with the local kernel and module (see [patches.md](patches.md)): Qwen2.5-7B Q4_K_M decode (tg128) 24.78 to 32.87 tok/s, +32.6 percent, in a four-arm balanced run; the pair `nogttspill,dmashaders` gave +28.1, +27.3 and +32.6 percent on three boots. `nogttspill` added nothing on top of `dmashaders`, so the setting here is `dmashaders` alone. `dmashaders` alone was measured on one boot; the pair on three. Method, per-run values, the 256 MiB visible-VRAM and link readings, and everything the run does not show are in the [benchmark record](../../benchmarks/2026-10-26-rx9070-m2max-radv-perftest.md).
 
 Limits that matter for using it:
 
