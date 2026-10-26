@@ -1,21 +1,19 @@
 # Driver patches and upstream status: RX 9070 (Navi 48)
 
-State as of 2026-10-22.
+State as of 2026-10-26 (corrected; first written 2026-10-22).
 
-## Patches carried: none
+## Patches carried: local kernel and module changes
 
-No AMD kernel source patch and no Mesa patch is carried for this card. RDNA4
-(`gfx1201`) support is upstream in the kernel and Mesa, and the amdgpu module
-package built for the [RX 7600](../rx-7600/patches.md) compiles the whole
-amdgpu driver set from unmodified sources, so this card's target is inside
-what it compiles.
+The measured RX 9070 runs used a local kernel and a local amdgpu module. They are not unmodified upstream. An earlier version of this page said the module was built from unmodified sources; that had no receipt and is withdrawn. RDNA4 (`gfx1201`) support itself is upstream in the kernel and Mesa (see the table below).
 
-**Measured on one host:** the module package passed strict `modpost` on
-2026-10-22. On 2026-10-25 the same module (SHA-256 `1388ccac…`) loaded on the
-14-inch M2 Max and initialized the `gfx1201` card: rings up, the driver's own
-VRAM test passed, and llama.cpp ran (see the
-[benchmark record](../../benchmarks/2026-10-25-rx9070-m2max-llamacpp-vulkan.md)). That used the local kernel and device-tree
-changes described on the RX 7600 page. Nothing is proven on another host.
+- **Module:** SHA-256 `1388ccac…`, internal revision r0014. By the builder's retained build history it was built on 2026-10-22 from the 7.1.12 kernel package pin plus patches numbered 0001 to 0005 and local patches 0006 to 0014. This module's patch files are not in this repository. It changes memory placement: patch 0014 moves a VRAM buffer the CPU faults on into GTT and pins domains, makes GTT buffers write-combined by default when DMA is not coherent, and adds PSP-buffer-aware accessors. Its `egpu_vram_map` parameter (the 2026-10-25 benchmark ran with `egpu_vram_map=4`) is a BAR self-test switch, not a placement control.
+- **Kernel:** `7.1.12-2-20261013.18-egpu-ARCH`, with the local kernel and device-tree changes described on the [RX 7600 page](../rx-7600/patches.md). The pull request named there is a later series (created 2026-10-23); this module is not that series' head.
+- **Mesa:** the benchmark record names the staged Arch Linux ARM package `26.2.5-arch1.1`. On 2026-10-26 the loaded `libvulkan_radeon.so` was byte-identical (SHA-256 `e4acbd79…`) to the one inside that package. No Mesa patch is documented for the RX 9070 runs recorded here.
+
+**Not tested:** whether an unmodified amdgpu initializes this card on this host. Success exists only with the module above. A build of unmodified sources passed strict `modpost` on 2026-10-22 (see the RX 7600 page); that is a build check, not a run. This page claims neither that stock works nor that it cannot.
+
+**Measured on one host:** on 2026-10-25 the module above loaded on the 14-inch M2 Max and initialized the `gfx1201` card: rings up, the driver's own VRAM test passed, and llama.cpp ran (see the
+[benchmark record](../../benchmarks/2026-10-25-rx9070-m2max-llamacpp-vulkan.md)). Nothing is proven on another host.
 
 ## Upstream status that gates this card
 
