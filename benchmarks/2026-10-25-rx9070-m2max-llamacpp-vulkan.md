@@ -111,7 +111,7 @@ Established by these runs:
 
 Not established: why each dispatch costs 40 to 50 us. "A fence or barrier wait on memory behind the tunnel" is a guess, not a measurement.
 
-Not tried on this card: a newer llama.cpp, any RADV switch, a 27B model, the 7600 on the same boot. The [RX 7600 record](2026-10-22-rx7600-m2max-llamacpp-vulkan.md) found a free decode gain from `RADV_PERFTEST=nogttspill,dmashaders` and from the graphics queue on that card. Whether either helps the 9070 is open.
+Not tried on this card at the time of this record: a newer llama.cpp, any RADV switch (tried on 2026-10-26: see the [RADV_PERFTEST record](2026-10-26-rx9070-m2max-radv-perftest.md)), a 27B model, the 7600 on the same boot. The [RX 7600 record](2026-10-22-rx7600-m2max-llamacpp-vulkan.md) found a free decode gain from `RADV_PERFTEST=nogttspill,dmashaders` and from the graphics queue on that card. Whether either helps the 9070 is open.
 
 ## Repeatability limits
 

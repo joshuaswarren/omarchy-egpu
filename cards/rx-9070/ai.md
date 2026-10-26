@@ -27,7 +27,7 @@ GGML_VK_VISIBLE_DEVICES=0 llama-bench -m qwen2.5-7b-instruct-q4_k_m-00001-of-000
   -p 512 -n 128 -r 3 -ngl 99 -fa 0,1
 ```
 
-Decode is limited by the number of GPU dispatches per token, not by the model size: see [why](README.md#why-decode-is-dispatch-bound-on-this-setup). `RADV_PERFTEST` switches that sped up the RX 7600 have not been tried on this card.
+Decode is limited by the number of GPU dispatches per token, not by the model size: see [why](README.md#why-decode-is-dispatch-bound-on-this-setup). `RADV_PERFTEST=dmashaders` raised decode by about 27 to 33 percent on this card on three boots (llama.cpp Vulkan, Qwen2.5-7B Q4_K_M); how to set it, and what the measurement does not show, are in the [setup note](setup.md#decode-environment-setting-apple-silicon-egpu-hosts) and the [benchmark record](../../benchmarks/2026-10-26-rx9070-m2max-radv-perftest.md).
 
 ## Honesty box
 

@@ -42,7 +42,7 @@ Three measurements show that the count of dispatches, and not the data volume, s
 | A 3.56 GiB and a 4.36 GiB model | Same decode rate (23.93 and 24.04 t/s) |
 | Auto and high power level | Same decode rate (24.27 and 24.20 t/s) |
 
-Over the Thunderbolt tunnel, an empty submit-and-wait to this card takes 89 to 101 us, against 1.0 us on the M2's own GPU. That is the same order of size as the cost per dispatch, but we did not measure that decode dispatches pay it. Why each dispatch costs 40 to 50 us is not established. A newer llama.cpp, RADV switches and the 7600 on the same boot have not been tried. The full per-op table and the method are in the [benchmark record](../../benchmarks/2026-10-25-rx9070-m2max-llamacpp-vulkan.md).
+Over the Thunderbolt tunnel, an empty submit-and-wait to this card takes 89 to 101 us, against 1.0 us on the M2's own GPU. That is the same order of size as the cost per dispatch, but we did not measure that decode dispatches pay it. Why each dispatch costs 40 to 50 us is not established. A newer llama.cpp and the 7600 on the same boot have not been tried. `RADV_PERFTEST=dmashaders` was tried the next day and raised decode by about 27 to 33 percent; see the [RADV_PERFTEST record](../../benchmarks/2026-10-26-rx9070-m2max-radv-perftest.md). That record does not say why. The full per-op table and the method are in the [benchmark record](../../benchmarks/2026-10-25-rx9070-m2max-llamacpp-vulkan.md).
 
 The RX 9070 decodes slower (24.0 t/s) than the RX 7600 (28.9 to 31.9 t/s) while prefilling about 2.5 times faster. We did not run the per-op log on the 7600 on the same boot, so we cannot say whether its dispatch cost differs.
 
