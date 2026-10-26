@@ -24,7 +24,7 @@ observed failure.
 | 13-inch M1 MacBook Pro | **BLOCKED**: no amdgpu in the kernel build that host runs (checked 2026-10-16); no attach attempted | [setup.md](setup.md) |
 | 16-inch M1 Max MacBook Pro | **BLOCKED**: no attach attempted, no run | |
 | x86 Omarchy | **BLOCKED**: no reference run recorded on our x86 hosts | |
-| Driver module set | **MEASURED** on the M2 Max: the module built for the RX 7600 (SHA-256 `1388ccac…`) loaded and initialized the `gfx1201` card | [patches.md](patches.md) |
+| Driver module set | **MEASURED** on the M2 Max: a local amdgpu module build (SHA-256 `1388ccac…`, see patches.md for what it changes) loaded and initialized the `gfx1201` card | [patches.md](patches.md) |
 
 The one measured result is on the 14-inch M2 Max, behind unpublished local kernel and device-tree changes. It is not a recipe a stock system can follow yet. No result exists on any other host.
 
