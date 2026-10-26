@@ -95,6 +95,23 @@ and the [M2 Max host guide](../../hosts/m2-max/README.md). This card's own
 behavior beyond that stays unrecorded; the logs will say it, we will not
 predict it.
 
+## Decode environment setting (Apple Silicon eGPU hosts)
+
+For llama.cpp Vulkan decode on this card, set one variable for the launch of the program, not for the desktop session:
+
+```bash
+RADV_PERFTEST=dmashaders llama-bench -m MODEL.gguf -p 0 -n 128 -r 3 -ngl 99 -fa 1
+```
+
+Measured on the 14-inch M2 Max with the local kernel and module (see [patches.md](patches.md)): Qwen2.5-7B Q4_K_M decode (tg128) 24.78 to 32.87 tok/s, +32.6 percent, in a four-arm balanced run; the pair `nogttspill,dmashaders` gave +28.1, +27.3 and +32.6 percent on three boots. `nogttspill` added nothing on top of `dmashaders`, so the setting here is `dmashaders` alone. `dmashaders` alone was measured on one boot; the pair on three. Method, per-run values, the 256 MiB visible-VRAM and link readings, and everything the run does not show are in the [benchmark record](../../benchmarks/2026-10-26-rx9070-m2max-radv-perftest.md).
+
+Limits that matter for using it:
+
+- One card, one model, one quantization. Prompt processing was not part of the test.
+- Only llama.cpp token generation was measured. Setting `RADV_PERFTEST` for the whole session would also reach the compositor and any game on this card, which were not tested; scope it to the launch.
+- The RX 7600 page also sets `GGML_VK_DISABLE_MMVQ` and `GGML_VK_ALLOW_GRAPHICS_QUEUE`. Those were not tried on this card.
+- The result is for the local kernel and module named on the patches page. It has not been repeated on any other module build.
+
 ## First-run requirements
 
 When this card is first attached, the run must also record (per the
