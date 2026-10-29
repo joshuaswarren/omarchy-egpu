@@ -11,3 +11,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run stdlib unittest suite
         run: python3 -m unittest discover -s tests -v
+      - name: Install the aarch64 cross tools for the gate tests
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu libc6-dev-arm64-cross
+      - name: Run the EGL profile gate tests and the mutation check
+        working-directory: packages/nvidia-userspace-615
+        run: |
+          bash test-check-egl.sh
+          bash mutate-check-egl.sh | tee "$RUNNER_TEMP/mutants.out"
+          if grep -q 'killed: NO' "$RUNNER_TEMP/mutants.out"; then echo 'a mutant survived'; exit 1; fi
+          test "$(grep -c '^mutant ' "$RUNNER_TEMP/mutants.out")" = 12
