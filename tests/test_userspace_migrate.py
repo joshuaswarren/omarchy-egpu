@@ -17,7 +17,8 @@ import unittest
 PKG_DIR = pathlib.Path(__file__).resolve().parents[1] / "packages" / "nvidia-userspace-615"
 SCRIPT = pathlib.Path(os.environ.get("MIGRATE_SH", PKG_DIR / "migrate.sh"))
 ROOT = "usr/lib/nvidia-egpu-615.78.08/"
-TOOLS = ["bash", "tar", "find", "sort", "cmp", "readlink", "date", "mktemp", "wc", "tr", "sed", "grep", "cat", "id", "dirname", "rm", "mkdir", "head", "cut", "xz", "gzip", "ln"]
+FW = "usr/lib/firmware/nvidia/615.78.08/"
+TOOLS = ["bash", "tar", "find", "sort", "cmp", "readlink", "date", "mktemp", "wc", "tr", "sed", "grep", "cat", "id", "dirname", "rm", "mkdir", "head", "cut", "xz", "gzip", "ln", "python3", "awk"]
 
 
 def make_package(path, files):
@@ -57,11 +58,46 @@ class MigratePlanTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
 
-    def plan(self):
-        env = {"PATH": str(self.bin), "MIGRATE_ROOT": str(self.host), "STUB_OWNERS": str(self.owners)}
+    def plan(self, hookdirs=""):
+        env = {"PATH": str(self.bin), "MIGRATE_ROOT": str(self.host), "STUB_OWNERS": str(self.owners), "MIGRATE_HOOKDIRS": hookdirs}
         return subprocess.run(
             [shutil.which("bash"), str(SCRIPT), str(self.pkg)], env=env, capture_output=True, text=True, check=False
         )
+
+    def test_firmware_in_the_profile_tree_is_compared_with_the_host_firmware_dir(self):
+        make_package(self.pkg, {ROOT + "firmware/gsp.bin": b"fw"})
+        self.put_host(FW + "gsp.bin", b"fw")
+        r = self.plan()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("SAME 1, NEW 0, DIFF 0", r.stdout)
+        self.put_host(FW + "gsp.bin", b"other")
+        r = self.plan()
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+
+    def test_plan_names_the_hooks_that_watch_the_transaction(self):
+        hooks = self.tmp / "hooks"
+        hooks.mkdir()
+        (hooks / "90-initcpio.hook").write_text(
+            "[Trigger]\nOperation = Remove\nType = Path\nTarget = usr/lib/firmware/*\n\n[Action]\nWhen = PostTransaction\nExec = /usr/bin/true\n"
+        )
+        self.put_host(ROOT + "lib/a.so", b"aaa")
+        quiet = self.plan(str(hooks))
+        self.assertEqual(quiet.returncode, 0, quiet.stdout + quiet.stderr)
+        self.assertNotIn("90-initcpio.hook", quiet.stdout)
+        # the installed earlier revision keeps its firmware under usr/lib/firmware: removing it would trigger the hook
+        (self.bin / "pacman").write_text(
+            '#!/bin/bash\n[ "$1" = -Ql ] && { echo "omarchy-nvidia-egpu-userspace-615 /usr/lib/firmware/nvidia/615.78.08/gsp.bin"; exit 0; }\n'
+            '[ "$1" = -Qqo ] || exit 1\nexit 0\n'
+        )
+        r = self.plan(str(hooks))
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("apply masks them): 90-initcpio.hook", r.stdout)
+
+    def test_missing_python3_stops_the_plan(self):
+        (self.bin / "python3").unlink()
+        r = self.plan()
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.assertIn("python3 is missing", r.stdout)
 
     def test_clean_host_plans_and_exits_zero(self):
         self.put_host(ROOT + "lib/a.so", b"aaa")

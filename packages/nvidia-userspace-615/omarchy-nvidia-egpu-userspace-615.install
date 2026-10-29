@@ -1,0 +1,22 @@
+# Links /usr/lib/firmware/nvidia/615.78.08 to the firmware in the profile tree. The link is made here, not shipped in the package, so it is not in the package file list
+# and no pacman hook that watches usr/lib/firmware/* (mkinitcpio) runs for it. The kernel's firmware loader follows the link.
+_fw_dir=/usr/lib/firmware/nvidia/615.78.08
+_fw_target=../../nvidia-egpu-615.78.08/firmware
+
+_link_firmware() {
+	mkdir -p /usr/lib/firmware/nvidia
+	if [ -L "$_fw_dir" ]; then ln -sfn "$_fw_target" "$_fw_dir"
+	elif [ -d "$_fw_dir" ]; then
+		rmdir "$_fw_dir" 2> /dev/null && ln -s "$_fw_target" "$_fw_dir" \
+			|| echo "warning: $_fw_dir is a directory with files in it; the driver loads those files, not the package's (move them away and reinstall the package)" >&2
+	elif [ ! -e "$_fw_dir" ]; then ln -s "$_fw_target" "$_fw_dir"
+	fi
+}
+
+post_install() { _link_firmware; }
+post_upgrade() { _link_firmware; }
+
+pre_remove() {
+	[ "$(readlink "$_fw_dir" 2> /dev/null)" = "$_fw_target" ] && rm -f "$_fw_dir"
+	return 0
+}
