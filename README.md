@@ -82,6 +82,7 @@ For reference, the thread's Metal values for the same Llama-2-7B Q4_0 are pp512 
 | ASRock RX 9070 Challenger 16GB | [RX 9070](cards/rx-9070/) | amdgpu + RADV + llama.cpp Vulkan | ROCm and runner constraints in guide |
 | Intel Arc Pro B60 | [Arc Pro B60](cards/arc-pro-b60/) | xe + ANV + llama.cpp Vulkan | Intel-specific runtime constraints in guide |
 | NVIDIA RTX 5060 Ti 16GB | [RTX 5060 Ti](cards/rtx-5060-ti/) | nouveau + NVK for the Apple Silicon build | NVIDIA-open/CUDA reference path in guide |
+| Mellanox ConnectX-5 Ex (network card, not a GPU) | [ConnectX-5](cards/connectx-5/) | mlx5_core built for the running kernel | Probe verified on a 14-inch M2 Max; blocked on the M6 |
 
 MLX support on an integrated Apple GPU does not establish support for an external AMD, Intel, or NVIDIA card. Each guide states its limits. Retain the integrated GPU's driver and Vulkan ICD.
 
