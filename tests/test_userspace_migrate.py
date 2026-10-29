@@ -141,6 +141,14 @@ class MigratePlanTest(unittest.TestCase):
         (self.bin / "readelf").rename(self.bin / "aarch64-linux-gnu-readelf")
         r = self.plan()
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn(f"profile checker readelf: {self.bin}/aarch64-linux-gnu-readelf\n", r.stdout)
+
+    def test_plain_readelf_is_linked_under_the_cross_name_for_the_checker(self):
+        r = self.plan()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        line = next(x for x in r.stdout.splitlines() if x.startswith("profile checker readelf: "))
+        self.assertIn("/shim/aarch64-linux-gnu-readelf (link made here, pointing at ", line)
+        self.assertTrue(line.endswith("/readelf)"), line)
 
     def test_apply_refuses_without_root(self):
         if os.getuid() == 0:

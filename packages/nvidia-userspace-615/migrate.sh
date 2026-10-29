@@ -42,6 +42,8 @@ command -v python3 > /dev/null || { echo "STOP: python3 is missing, so the hook 
 if command -v aarch64-linux-gnu-readelf > /dev/null; then :
 elif command -v readelf > /dev/null; then mkdir -p "$W/shim" && ln -s "$(command -v readelf)" "$W/shim/aarch64-linux-gnu-readelf"
 else echo "STOP: neither aarch64-linux-gnu-readelf nor readelf is installed (binutils), so the profile checker cannot run"; stops=1; fi
+rd=$(PATH="$W/shim:$PATH" command -v aarch64-linux-gnu-readelf || true)
+echo "profile checker readelf: ${rd:-none}$([ "$rd" != "$W/shim/aarch64-linux-gnu-readelf" ] || echo " (link made here, pointing at $(readlink "$rd"))")"
 same=0 new=0 diff=0 other=0
 while read -r f; do
 	hp=$(hostpath "$f")
