@@ -17,11 +17,11 @@ Common host setup, aperture checks and removal rules live in
 
 | Host | Status | What is proven |
 |---|---|---|
-| x86 Omarchy desktop | **BLOCKED** (no recorded reference run) | The stock `xe` path is what x86 uses; we have run nothing on our own x86 hardware with this card |
-| 13-inch M1 MacBook Pro | **BLOCKED** (16K xe kernel not built or shipped) | Nothing. No attach, no bind, no firmware boot, no compute |
-| 14-inch M2 Max MacBook Pro | **BLOCKED** (same kernel gate) | Same |
+| x86 Omarchy desktop | **NOT MEASURED** (no recorded reference run) | The stock `xe` path is what x86 uses; we have run nothing on our own x86 hardware with this card |
+| 13-inch M1 MacBook Pro | **NOT MEASURED** (16K xe kernel not built or shipped) | Nothing. No attach, no bind, no firmware boot, no compute |
+| 14-inch M2 Max MacBook Pro | **NOT MEASURED** (same kernel gate) | Same |
 | 16-inch M1 Max MacBook Pro | **MEASURED** (local patches, not upstream) | xe loads, ANV enumerates the card and llama.cpp Vulkan runs on it; hot-plug untested. See the [benchmark record](../../benchmarks/2026-10-23-b60-m1max-llamacpp-vulkan.md) |
-| M6 Mac mini | **BLOCKED** (no recorded reference run; Thunderbolt host support for this machine is still in progress) | No M6-specific build or run of any kind |
+| M6 Mac mini | **NOT MEASURED** (no recorded reference run; Thunderbolt host support for this machine is still in progress) | No M6-specific build or run of any kind |
 
 Two supporting facts, kept apart from the card itself:
 

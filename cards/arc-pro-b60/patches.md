@@ -46,7 +46,7 @@ licenses, and this repository's MIT license does not replace them.
 
 ## Status, precisely
 
-**BUILT-UNTESTED for this directory's four-patch series on its own.** With these patches applied, xe compiled
+**NOT MEASURED for this directory's four-patch series on its own.** With these patches applied, xe compiled
 through `xe.o` on a 16K arm64 configuration. The full shared kernel (which also
 carries TTM, buddy, suballoc, GPUSVM, HMM and VMAP_PFN) has not been built or
 linked; a C-only diagnostic kernel was deliberately stopped before link and

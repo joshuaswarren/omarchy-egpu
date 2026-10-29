@@ -4,12 +4,10 @@ A dual-port ConnectX-4/5 class network card in a Thunderbolt PCIe dock on Apple 
 
 ## Status
 
-Labels follow the repo definition: `MEASURED` is an actual runtime observation, `BLOCKED` names the observed failure.
-
 | Host | Stage | Evidence |
 |---|---|---|
 | 14-inch M2 Max MacBook Pro | **MEASURED** (2026-10-29): the card enumerates behind the dock (after one Thunderbolt retry), the kernel's `mlx5_core` source (with an optional diagnostic patch, off) probes it, reads firmware `16.35.4030`, brings up the eswitch and both network interfaces, and unloads without error. No traffic, no RDMA, no cable attached | below |
-| M6 Mac mini | **BLOCKED**: `mlx5_core` reads the card's registers and firmware version, then the first firmware command never completes. Under investigation | [M6 note](#m6-mac-mini) |
+| M6 Mac mini | **MEASURED** (failure): `mlx5_core` reads the card's registers and firmware version, then the first firmware command never completes. Under investigation | [M6 note](#m6-mac-mini) |
 | 13-inch M1, 16-inch M1 Max | not run | |
 
 ## What was used

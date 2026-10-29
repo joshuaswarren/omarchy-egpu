@@ -13,17 +13,12 @@ RDNA3 (Navi 33), 8 GB GDDR6, LLVM target `gfx1102`.
 
 ## Status
 
-Labels follow the repo definition: `MEASURED` is an actual runtime
-observation, `BUILT-UNTESTED` means a driver compiled for the shared target
-with no card runtime proof, `BLOCKED` names the missing prerequisite or the
-observed failure.
-
 | Host | Stage | Evidence |
 |---|---|---|
-| 14-inch M2 Max MacBook Pro | **MEASURED:** amdgpu initializes all rings, RADV enumerates the card, and llama.cpp Vulkan runs on it. Numbers in the benchmark record. Reproduction requires unpublished local driver and device-tree changes; hot-plug untested | [Benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md), [host result](../../hosts/m2-max/README.md) |
-| 13-inch M1 MacBook Pro | **BLOCKED**: no amdgpu in the kernel build that host runs (checked 2026-10-16); no attach attempted | [setup.md](setup.md) |
-| 16-inch M1 Max MacBook Pro | **BLOCKED**: no attach attempted, no run | |
-| x86 Omarchy | **BLOCKED**: no reference run recorded on our x86 hosts | |
+| 14-inch M2 Max MacBook Pro | **MEASURED:** amdgpu initializes all rings, RADV enumerates the card, and llama.cpp Vulkan runs on it. Numbers in the benchmark record. Reproduction requires unpublished local driver and device-tree changes; surprise unplug/replug measured 2026-10-29 | [Benchmark record](../../benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md), [host result](../../hosts/m2-max/README.md) |
+| 13-inch M1 MacBook Pro | **NOT MEASURED**: no amdgpu in the kernel build that host runs (checked 2026-10-16); no attach attempted | [setup.md](setup.md) |
+| 16-inch M1 Max MacBook Pro | **NOT MEASURED**: no attach attempted, no run | |
+| x86 Omarchy | **NOT MEASURED**: no reference run recorded on our x86 hosts | |
 
 This is the first card in this repo with a measured Linux inference result on an Apple Silicon host. It is not yet a recipe a stock system can follow: the working run depends on a local amdgpu build and one device-tree change that are not published. Enumerated BARs and a healthy link alone never proved compute; the numbers below did.
 
