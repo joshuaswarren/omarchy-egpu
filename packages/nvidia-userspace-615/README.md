@@ -14,9 +14,14 @@ Status: source only. This directory has been built into a package. It has not be
 | `/usr/lib/nvidia-egpu-615.78.08/share/vulkan/icd.d/nvidia_icd.json` | the Vulkan ICD file; `library_path` is the absolute path of the profile's `libGLX_nvidia.so.0` |
 | `/usr/lib/nvidia-egpu-615.78.08/share/glvnd/egl_vendor.d/10_nvidia.json` | a profile-private glvnd EGL manifest (not the system one) |
 | `/usr/lib/nvidia-egpu-615.78.08/vulkan-env.sh` | sourceable file that sets `LD_LIBRARY_PATH`, `VK_DRIVER_FILES` and `__EGL_VENDOR_LIBRARY_FILENAMES` for one run |
-| `/usr/lib/firmware/nvidia/615.78.08/` | `gsp_ga10x.bin`, `gsp_tu10x.bin`, `ucodes_ga10x.bin`, `ucodes_tu10x.bin` |
+| `/usr/lib/nvidia-egpu-615.78.08/firmware/` | `gsp_ga10x.bin`, `gsp_tu10x.bin`, `ucodes_ga10x.bin`, `ucodes_tu10x.bin` |
+| `/usr/lib/firmware/nvidia/615.78.08` | a link to the firmware directory above, made by the package's install script (it is not a package file) |
 
 Nothing goes under `/etc` or `/usr/share/glvnd`. A process uses the tree only when it sources `vulkan-env.sh`.
+
+## Why the firmware is not a package file under `usr/lib/firmware`
+
+The mkinitcpio pacman hook watches `usr/lib/firmware/*`. The first install of this package put the firmware there, and pacman rebuilt a boot image and rewrote `limine.conf`. A boot image must never change because of a driver userspace package. The package now keeps the firmware in its own tree and the install script creates the link that the kernel firmware loader follows. The link is not in the package file list, so no hook sees it. `tests/test_userspace_hooks.py` builds the file list from the real `PKGBUILD` and fails when any path matches a boot-image hook target.
 
 ## Why the ICD path is absolute
 
@@ -39,10 +44,11 @@ Hosts that already hold a hand-copied tree need a migration, because pacman refu
 
 - `host-inventory.sh` writes a read-only inventory of the host tree (type, mode, size, sha256).
 - `inventory.py PKG INVENTORY` compares that inventory with the package. A file is `SAME`, `NEW`, `DIFF` or `HOST-ONLY`. The script exits 1 on any `DIFF` or `HOST-ONLY` file.
-- `migrate.sh PKG` prints the plan and changes nothing. It stops (exit 3) when a package file exists on the host with other bytes, when a host file belongs to another package, when `lsof` is missing, or when `check-egl-profile.sh` is missing next to it. `--apply` runs the same checks before any change.
-- `migrate.sh PKG --apply` needs root and the file `/root/userspace615.GO`. It writes a tar backup of both trees, extracts that tar again and checks it against a sha256 manifest, moves the identical unowned files aside (it deletes nothing), runs `pacman -U` without `--overwrite`, compares every file with the package, and runs `check-egl-profile.sh` on the live tree.
+- `migrate.sh PKG` prints the plan and changes nothing. It stops (exit 3) when a package file exists on the host with other bytes, when a host file belongs to another package, when `lsof`, `python3` or `readelf` is missing, or when `check-egl-profile.sh` or `hook_triggers.py` is missing next to it. It also prints the pacman hooks that watch a path of the transaction. `--apply` runs the same checks before any change.
+- `hook_triggers.py PKG [--paths FILE]` lists the hooks (by file name) that have a `Type = Path` target matching a path of the package, or a path in FILE (the installed revision's files, because removing files triggers hooks too).
+- `migrate.sh PKG --apply` needs root and the file `/root/userspace615.GO`. It writes a tar backup of both trees, extracts that tar again and checks it against a sha256 manifest, moves the identical unowned files aside (it deletes nothing), runs `pacman -U` without `--overwrite` and with the matching hooks masked (a same-named link to `/dev/null` in a `--hookdir`), compares every file with the package, checks the firmware link, and runs `check-egl-profile.sh` on the live tree. It also upgrades an installed earlier revision that kept the firmware under `usr/lib/firmware`; masking is needed there because removing those files would trigger the boot-image hook once.
 
 ## Tests
 
-- `python3 -m unittest discover -s tests` runs the inventory and migration-plan tests. They use temporary roots and a stub `pacman`; they do not migrate a host.
+- `python3 -m unittest discover -s tests` runs the inventory, migration-plan, hook and install-script tests. They use temporary roots and a stub `pacman`; they do not migrate a host.
 - `bash test-check-egl.sh` and `bash mutate-check-egl.sh` test the gate. They build a stub library at test time, so no NVIDIA file is stored here. They need `aarch64-linux-gnu-gcc` and `aarch64-linux-gnu-readelf` (Debian and Ubuntu: `gcc-aarch64-linux-gnu`, `binutils-aarch64-linux-gnu`, `libc6-dev-arm64-cross`) and exit 9 without them.

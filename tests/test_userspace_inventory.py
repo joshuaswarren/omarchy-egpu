@@ -67,7 +67,7 @@ class InventoryTest(unittest.TestCase):
         return rc, out.getvalue()
 
     def test_identical_tree_is_all_same_and_exits_zero(self):
-        files = {ROOT + "lib/libcuda.so.615.78.08": b"cuda", FW + "gsp.bin": b"fw"}
+        files = {ROOT + "lib/libcuda.so.615.78.08": b"cuda", ROOT + "firmware/gsp.bin": b"fw"}
         links = {ROOT + "lib/libcuda.so.1": "libcuda.so.615.78.08"}
         rc, out = self.run_inventory(
             files, links, {"lib/libcuda.so.615.78.08": b"cuda"}, {"lib/libcuda.so.1": "libcuda.so.615.78.08"}, {"gsp.bin": b"fw"}

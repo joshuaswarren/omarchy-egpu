@@ -1,16 +1,19 @@
 # NVIDIA 615.78.08 aarch64 userspace for the Thunderbolt eGPU profile on an Apple Silicon MacBook Pro running Omarchy: the profile-private tree /usr/lib/nvidia-egpu-615.78.08 and its GSP firmware.
 # Built from the pinned official .run (extract only, never executed as an installer). Nothing here touches the system 595 driver, /usr/share/glvnd or /etc:
 # the profile has its own libEGL_nvidia, its own glvnd manifest and its own Vulkan ICD json, and runs select them with vulkan-env.sh.
+# The GSP firmware lives in the profile tree (firmware/) and an install script links /usr/lib/firmware/nvidia/$pkgver to it: a package file under usr/lib/firmware makes the
+# mkinitcpio hook rebuild the boot images (the first install on a MacBook Pro did exactly that), and a link made by the script is not in the package file list, so no hook sees it.
 # Replaces the hand-staged tree and the Vulkan add-on omarchy-nvidia-egpu-vulkan-615 (rmapi-tegra + ICD json), which this package now owns.
 pkgname=omarchy-nvidia-egpu-userspace-615
 pkgver=615.78.08
-pkgrel=1
+pkgrel=2
 pkgdesc='NVIDIA 615.78.08 aarch64 userspace (profile-private tree, GSP firmware) for the Apple Thunderbolt eGPU profile'
 arch=(aarch64)
 url='https://www.nvidia.com/'
 license=('LicenseRef-NVIDIA-proprietary')
 conflicts=(omarchy-nvidia-egpu-vulkan-615)
 replaces=(omarchy-nvidia-egpu-vulkan-615)
+install=omarchy-nvidia-egpu-userspace-615.install
 options=(!strip !debug !lto)
 # inventory.py reads the package with Python's tarfile, which reads xz on every Python 3; the default zstd needs 3.14
 PKGEXT='.pkg.tar.xz'
@@ -46,7 +49,7 @@ package() {
 	install -Dm644 "$x/LICENSE" "$P/share/LICENSE"
 	install -Dm644 "$x/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 	for f in gsp_ga10x gsp_tu10x ucodes_ga10x ucodes_tu10x; do
-		install -Dm644 "$x/firmware/$f.bin" "$pkgdir/usr/lib/firmware/nvidia/$V/$f.bin"
+		install -Dm644 "$x/firmware/$f.bin" "$P/firmware/$f.bin"
 	done
 	# build gate on the finished tree (makepkg runs check() before package(), so it lives here)
 	"$startdir/check-egl-profile.sh" "$pkgdir" "$V"

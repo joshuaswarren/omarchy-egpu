@@ -50,20 +50,29 @@ def package_inventory(path):
     return pkg
 
 
+def host_path(name):
+    """Where a package file sits on the host: the package keeps the firmware in the profile tree, the driver sees it under usr/lib/firmware."""
+    if name.startswith(ROOT + "firmware/"):
+        return FW + name.rsplit("/", 1)[1]
+    return name
+
+
 def main():
     pkg = package_inventory(sys.argv[1])
     host = host_inventory(sys.argv[2])
     bad = 0
+    same = new = 0
     for p in sorted(pkg):
-        h = host.get(p)
+        h = host.get(host_path(p))
         cls = "NEW" if h is None else "SAME" if h == pkg[p] else "DIFF"
         bad += cls == "DIFF"
+        same += cls == "SAME"
+        new += cls == "NEW"
         print(f"{cls:5} {p}" + (f"  pkg={pkg[p][1][:16]} host={h[1][:16]}" if cls == "DIFF" else ""))
-    only = sorted(set(host) - set(pkg))
+    only = sorted(set(host) - {host_path(p) for p in pkg})
     for p in only:
         print(f"HOST-ONLY {p}")
-    counts = {c: sum(1 for p in pkg if (host.get(p) is None and c == "NEW") or (host.get(p) == pkg[p] and c == "SAME")) for c in ("SAME", "NEW")}
-    print(f"summary: package files {len(pkg)}, SAME {counts['SAME']}, NEW {counts['NEW']}, DIFF {bad}, HOST-ONLY {len(only)}")
+    print(f"summary: package files {len(pkg)}, SAME {same}, NEW {new}, DIFF {bad}, HOST-ONLY {len(only)}")
     return 1 if bad or only else 0
 
 
