@@ -65,7 +65,9 @@ HK=()
 if [ -s "$W/hooks.txt" ]; then
 	mkdir "$W/mask"
 	while read -r hk; do ln -s /dev/null "$W/mask/$hk"; done < "$W/hooks.txt"
-	HK=(--hookdir "$W/mask")
+	# --hookdir replaces the configured HookDir, so name /etc/pacman.d/hooks again (hooks there still run) and put the mask last: a same-named hook in a later directory wins
+	[ ! -d /etc/pacman.d/hooks ] || HK+=(--hookdir /etc/pacman.d/hooks)
+	HK+=(--hookdir "$W/mask")
 fi
 echo "pacman hooks that watch a path of this transaction (apply masks them): $(tr '\n' ' ' < "$W/hooks.txt")"
 if [ "$MODE" != --apply ]; then
