@@ -1,0 +1,51 @@
+# NVIDIA 615.78.08 aarch64 userspace for the Thunderbolt eGPU profile on an Apple Silicon MacBook Pro running Omarchy: the profile-private tree /usr/lib/nvidia-egpu-615.78.08 and its GSP firmware.
+# Built from the pinned official .run (extract only, never executed as an installer). Nothing here touches the system 595 driver, /usr/share/glvnd or /etc:
+# the profile has its own libEGL_nvidia, its own glvnd manifest and its own Vulkan ICD json, and runs select them with vulkan-env.sh.
+# Replaces the hand-staged tree and the Vulkan add-on omarchy-nvidia-egpu-vulkan-615 (rmapi-tegra + ICD json), which this package now owns.
+pkgname=omarchy-nvidia-egpu-userspace-615
+pkgver=615.78.08
+pkgrel=1
+pkgdesc='NVIDIA 615.78.08 aarch64 userspace (profile-private tree, GSP firmware) for the Apple Thunderbolt eGPU profile'
+arch=(aarch64)
+url='https://www.nvidia.com/'
+license=('LicenseRef-NVIDIA-proprietary')
+conflicts=(omarchy-nvidia-egpu-vulkan-615)
+replaces=(omarchy-nvidia-egpu-vulkan-615)
+options=(!strip !debug !lto)
+_run=NVIDIA-Linux-aarch64-$pkgver.run
+source=("$_run")
+sha256sums=(5076011350181e81a031f0fd012fe35fe4be37c7820d651fb7aaa894af447a37)
+noextract=("$_run")
+
+prepare() {
+	sh "$srcdir/$_run" -x --target "$srcdir/x" > /dev/null
+}
+
+package() {
+	local x=$srcdir/x P=$pkgdir/usr/lib/nvidia-egpu-$pkgver V=$pkgver f
+	for f in libGLX_nvidia libcuda libnvidia-ml libnvidia-glcore libnvidia-glsi libnvidia-glvkspirv libnvidia-gpucomp libnvidia-nvvm \
+		libnvidia-ptxjitcompiler libnvidia-eglcore libnvidia-allocator libnvidia-tls libnvidia-rtcore libEGL_nvidia; do
+		install -Dm644 "$x/$f.so.$V" "$P/lib/$f.so.$V"
+	done
+	install -Dm644 "$x/libnvidia-nvvm70.so.4" "$P/lib/libnvidia-nvvm70.so.4"
+	install -Dm755 "$x/libnvidia-rmapi-tegra.so.$V" "$P/lib/libnvidia-rmapi-tegra.so.$V"
+	for f in libGLX_nvidia.so.0:libGLX_nvidia libcuda.so.1:libcuda libnvidia-allocator.so.1:libnvidia-allocator libnvidia-ml.so.1:libnvidia-ml \
+		libnvidia-nvvm.so.4:libnvidia-nvvm libnvidia-ptxjitcompiler.so.1:libnvidia-ptxjitcompiler libEGL_nvidia.so.0:libEGL_nvidia; do
+		ln -s "${f#*:}.so.$V" "$P/lib/${f%%:*}"
+	done
+	install -Dm755 "$x/nvidia-smi" "$P/bin/nvidia-smi"
+	install -Dm755 "$x/nvidia-modprobe" "$P/bin/nvidia-modprobe"
+	# absolute library path: a bare name would resolve to the system 595 libGLX_nvidia.so.0 whenever LD_LIBRARY_PATH is not set
+	install -d "$P/share/vulkan/icd.d"
+	sed "s|\"libGLX_nvidia.so.0\"|\"/usr/lib/nvidia-egpu-$V/lib/libGLX_nvidia.so.0\"|" "$x/nvidia_icd.json" > "$P/share/vulkan/icd.d/nvidia_icd.json"
+	chmod 644 "$P/share/vulkan/icd.d/nvidia_icd.json"
+	install -Dm644 "$startdir/10_nvidia.json" "$P/share/glvnd/egl_vendor.d/10_nvidia.json"
+	install -Dm644 "$startdir/vulkan-env.sh" "$P/vulkan-env.sh"
+	install -Dm644 "$x/LICENSE" "$P/share/LICENSE"
+	install -Dm644 "$x/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+	for f in gsp_ga10x gsp_tu10x ucodes_ga10x ucodes_tu10x; do
+		install -Dm644 "$x/firmware/$f.bin" "$pkgdir/usr/lib/firmware/nvidia/$V/$f.bin"
+	done
+	# build gate on the finished tree (makepkg runs check() before package(), so it lives here)
+	"$startdir/check-egl-profile.sh" "$pkgdir" "$V"
+}
