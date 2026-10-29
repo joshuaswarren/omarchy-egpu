@@ -5,8 +5,8 @@ with NVK. Reference route on x86: NVIDIA open kernel modules plus CUDA.
 
 **Status 2026-10-22:** no host cell is proven. Both routes are stock
 distribution paths and neither has been run on our own x86 hardware with this
-card. On the laptops the nouveau modules are BUILT-UNTESTED (they compile for
-the 16K kernel with no source patches), the NVIDIA-open route is BLOCKED at
+card. On the laptops the nouveau modules are NOT MEASURED (they compile for
+the 16K kernel with no source patches, no run recorded), the NVIDIA-open route is NOT MEASURED at
 userspace because no matching aarch64 driver installer exists, and no card has
 ever been attached on any host.
 
