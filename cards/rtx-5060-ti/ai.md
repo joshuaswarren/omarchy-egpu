@@ -12,7 +12,7 @@ Driver status is in [setup.md](setup.md); the patch and upstream position in
 | Stack | x86 Omarchy host | Apple Silicon Omarchy host | Notes |
 |---|---|---|---|
 | llama.cpp (CUDA) | Applicable, untested by us | **Not available**: no CUDA userspace exists for this card on the laptops | Needs a working NVIDIA open-module install; see [setup.md](setup.md) |
-| llama.cpp (Vulkan, NVK) | Applicable, untested by us | Applicable in principle, **BLOCKED**: no driver run exists | Needs the nouveau route and a working firmware set |
+| llama.cpp (Vulkan, NVK) | Applicable, untested by us | Applicable in principle, **NOT MEASURED**: no driver run exists | Needs the nouveau route and a working firmware set |
 | vLLM (CUDA backend) | Applicable, untested by us | **Not available**: no CUDA userspace on aarch64 | The standard path for this card |
 | Ollama (CUDA) | Applicable, untested by us | **Not available**: same reason | Detects the driver at start; without CUDA it will not use the card |
 | Ollama (Vulkan backend) | Available as an additional backend | Untested on aarch64 | Vulkan is enabled when the backend is installed; `OLLAMA_VULKAN=0` disables it |
