@@ -12,6 +12,8 @@ license=('LicenseRef-NVIDIA-proprietary')
 conflicts=(omarchy-nvidia-egpu-vulkan-615)
 replaces=(omarchy-nvidia-egpu-vulkan-615)
 options=(!strip !debug !lto)
+# inventory.py reads the package with Python's tarfile, which reads xz on every Python 3; the default zstd needs 3.14
+PKGEXT='.pkg.tar.xz'
 _run=NVIDIA-Linux-aarch64-$pkgver.run
 source=("$_run")
 sha256sums=(5076011350181e81a031f0fd012fe35fe4be37c7820d651fb7aaa894af447a37)

@@ -31,6 +31,7 @@ The source is the official NVIDIA `.run` file, pinned by sha256 in the `PKGBUILD
 3. The build gate `check-egl-profile.sh` runs at the end of `package()` on the finished tree. A package whose EGL manifest does not name the profile's own `libEGL_nvidia` for this version does not build.
 
 The package hash changes with each build because the build date and file times are in the metadata. The file contents do not change.
+The `PKGBUILD` sets `PKGEXT='.pkg.tar.xz'`, so the package is an xz tarball that `inventory.py` (Python `tarfile`) and `migrate.sh` (`tar`) both read.
 
 ## Migration of a hand-staged tree
 
@@ -38,6 +39,10 @@ Hosts that already hold a hand-copied tree need a migration, because pacman refu
 
 - `host-inventory.sh` writes a read-only inventory of the host tree (type, mode, size, sha256).
 - `inventory.py PKG INVENTORY` compares that inventory with the package. A file is `SAME`, `NEW`, `DIFF` or `HOST-ONLY`. The script exits 1 on any `DIFF` or `HOST-ONLY` file.
-- `migrate.sh PKG` prints the plan and changes nothing. `migrate.sh PKG --apply` needs the file `/root/userspace615.GO`, makes a verified backup first, moves the identical unowned files aside (it deletes nothing), runs `pacman -U` without `--overwrite`, and verifies every file.
+- `migrate.sh PKG` prints the plan and changes nothing. It stops (exit 3) when a package file exists on the host with other bytes, when a host file belongs to another package, when `lsof` is missing, or when `check-egl-profile.sh` is missing next to it. `--apply` runs the same checks before any change.
+- `migrate.sh PKG --apply` needs root and the file `/root/userspace615.GO`. It writes a tar backup of both trees, extracts that tar again and checks it against a sha256 manifest, moves the identical unowned files aside (it deletes nothing), runs `pacman -U` without `--overwrite`, compares every file with the package, and runs `check-egl-profile.sh` on the live tree.
 
-Tests: `python3 -m unittest discover -s tests` (the inventory classification).
+## Tests
+
+- `python3 -m unittest discover -s tests` runs the inventory and migration-plan tests. They use temporary roots and a stub `pacman`; they do not migrate a host.
+- `bash test-check-egl.sh` and `bash mutate-check-egl.sh` test the gate. They build a stub library at test time, so no NVIDIA file is stored here. They need `aarch64-linux-gnu-gcc` and `aarch64-linux-gnu-readelf` (Debian and Ubuntu: `gcc-aarch64-linux-gnu`, `binutils-aarch64-linux-gnu`) and exit 9 without them.

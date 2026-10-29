@@ -16,7 +16,9 @@ FW = "usr/lib/firmware/nvidia/615.78.08/"
 def host_inventory(path):
     host = {}
     in_fw = False
-    for line in open(path):
+    with open(path) as f:
+        lines = f.read().split("\n")
+    for line in lines:
         line = line.rstrip("\n")
         if line.startswith("== firmware"):
             in_fw = True
