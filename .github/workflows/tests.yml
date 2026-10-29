@@ -12,7 +12,7 @@ jobs:
       - name: Run stdlib unittest suite
         run: python3 -m unittest discover -s tests -v
       - name: Install the aarch64 cross tools for the gate tests
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu libc6-dev-arm64-cross
       - name: Run the EGL profile gate tests and the mutation check
         working-directory: packages/nvidia-userspace-615
         run: |

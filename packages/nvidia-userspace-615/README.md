@@ -45,4 +45,4 @@ Hosts that already hold a hand-copied tree need a migration, because pacman refu
 ## Tests
 
 - `python3 -m unittest discover -s tests` runs the inventory and migration-plan tests. They use temporary roots and a stub `pacman`; they do not migrate a host.
-- `bash test-check-egl.sh` and `bash mutate-check-egl.sh` test the gate. They build a stub library at test time, so no NVIDIA file is stored here. They need `aarch64-linux-gnu-gcc` and `aarch64-linux-gnu-readelf` (Debian and Ubuntu: `gcc-aarch64-linux-gnu`, `binutils-aarch64-linux-gnu`) and exit 9 without them.
+- `bash test-check-egl.sh` and `bash mutate-check-egl.sh` test the gate. They build a stub library at test time, so no NVIDIA file is stored here. They need `aarch64-linux-gnu-gcc` and `aarch64-linux-gnu-readelf` (Debian and Ubuntu: `gcc-aarch64-linux-gnu`, `binutils-aarch64-linux-gnu`, `libc6-dev-arm64-cross`) and exit 9 without them.
