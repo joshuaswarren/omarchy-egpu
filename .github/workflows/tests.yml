@@ -17,4 +17,6 @@ jobs:
         working-directory: packages/nvidia-userspace-615
         run: |
           bash test-check-egl.sh
-          bash mutate-check-egl.sh
+          bash mutate-check-egl.sh | tee "$RUNNER_TEMP/mutants.out"
+          ! grep -q 'killed: NO' "$RUNNER_TEMP/mutants.out"
+          test "$(grep -c '^mutant ' "$RUNNER_TEMP/mutants.out")" = 12

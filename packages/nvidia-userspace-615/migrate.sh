@@ -4,7 +4,7 @@
 #   migrate.sh PKG --apply        does it, as root. Refuses unless /root/userspace615.GO exists (the operator's go, written by hand) and no process has a file of the tree open.
 # PKG is a package file that tar can read (xz or zstd). Both modes STOP (exit 3) on: a package file that exists on the host with other bytes (DIFF), a host file that another package
 # owns (pacman -Qqo), a missing lsof, or a missing check-egl-profile.sh next to this script. Apply stops before any change when one of those holds, so it cannot end half done.
-# Steps (apply): 1 backup of both trees to a tar, extracted again into a scratch dir and checked against a sha256 manifest made from the live files; 2 remove the old add-on package
+# Steps (apply): 1 backup of both trees to a tar, extracted again into a scratch dir on the backup disk (not tmpfs) and checked against a sha256 manifest made from the live files; 2 remove the old add-on package
 #   omarchy-nvidia-egpu-vulkan-615 (its two files are in the new package); 3 move the remaining unowned, identical files into the backup's "moved" dir (nothing is deleted);
 #   4 pacman -U (no --overwrite); 5 compare every file with the package's own and run check-egl-profile.sh on the live tree.
 # Rollback: restore from the backup dir (printed), then pacman -Rdd the new package.
@@ -46,13 +46,17 @@ if [ "$MODE" != --apply ]; then
 	echo "PLAN only. Apply would: back up $T and $FW to $B and check the backup after extracting it, pacman -Rdd $OLD, move the $same identical unowned files into $B/moved, pacman -U $PKG, compare every file, run check-egl-profile.sh on the live tree."
 	exit 0
 fi
+need=$(du -sb "$T" "$FW" | awk '{n+=$1} END {print n * 3}'); mkdir -p "$(dirname "$B")"
+free=$(df --output=avail -B1 "$(dirname "$B")" | tail -1)
+[ "$free" -gt "$need" ] || { echo "REFUSE: $(dirname "$B") has $free B free, the backup, its read-back copy and the moved files need about $need B" >&2; exit 4; }
 [ -e /root/userspace615.GO ] || { echo "REFUSE: /root/userspace615.GO missing (the operator's go)" >&2; exit 4; }
 if lsof +D "$T" 2> /dev/null | grep -q .; then echo "REFUSE: a process has a file of $T open" >&2; exit 4; fi
-mkdir -p "$B/moved" "$W/verify"
+mkdir -p "$B/moved" "$B/verify"
 tar -cpf "$B/trees.tar" -C / "${T#/}" "${FW#/}"
 ( cd / && find "${T#/}" "${FW#/}" -type f -exec sha256sum {} + ) | LC_ALL=C sort -k2 > "$B/manifest.sha256"
-tar -xpf "$B/trees.tar" -C "$W/verify"
-( cd "$W/verify" && sha256sum -c --quiet "$B/manifest.sha256" )
+tar -xpf "$B/trees.tar" -C "$B/verify"
+( cd "$B/verify" && sha256sum -c --quiet "$B/manifest.sha256" )
+rm -r "$B/verify"
 echo "backup verified from the extracted tar: $B ($(wc -l < "$B/manifest.sha256") files)"
 pacman -Q "$OLD" > /dev/null 2>&1 && pacman -Rdd --noconfirm "$OLD"
 while read -r f; do
