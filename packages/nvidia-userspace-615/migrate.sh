@@ -3,7 +3,7 @@
 #   migrate.sh PKG                plan only: prints the collision inventory and every step, changes nothing, needs no root (default)
 #   migrate.sh PKG --apply        does it, as root. Refuses unless /root/userspace615.GO exists (the operator's go, written by hand) and no process has a file of the tree open.
 # PKG is a package file that tar can read (xz or zstd). Both modes STOP (exit 3) on: a package file that exists on the host with other bytes (DIFF), a host file that another package
-# owns (pacman -Qqo), a missing lsof, or a missing check-egl-profile.sh next to this script. Apply stops before any change when one of those holds, so it cannot end half done.
+# owns (pacman -Qqo), a missing lsof, a missing readelf (the checker needs it; a plain readelf is linked as aarch64-linux-gnu-readelf), or a missing check-egl-profile.sh next to this script. Apply stops before any change when one of those holds, so it cannot end half done.
 # Steps (apply): 1 backup of both trees to a tar, extracted again into a scratch dir on the backup disk (not tmpfs) and checked against a sha256 manifest made from the live files; 2 remove the old add-on package
 #   omarchy-nvidia-egpu-vulkan-615 (its two files are in the new package); 3 move the remaining unowned, identical files into the backup's "moved" dir (nothing is deleted);
 #   4 pacman -U (no --overwrite); 5 compare every file with the package's own and run check-egl-profile.sh on the live tree.
@@ -28,6 +28,10 @@ echo "package files: $(wc -l < "$W/.files")   backup dir (apply): $B"
 stops=0
 command -v lsof > /dev/null || { echo "STOP: lsof is missing, so the open-file guard cannot run (install lsof)"; stops=1; }
 [ -r "$HERE/check-egl-profile.sh" ] || { echo "STOP: check-egl-profile.sh is missing next to this script"; stops=1; }
+# the checker calls aarch64-linux-gnu-readelf; a native aarch64 host only has readelf, so the shim is a link to it (inside the scratch dir, gone at exit)
+if command -v aarch64-linux-gnu-readelf > /dev/null; then :
+elif command -v readelf > /dev/null; then mkdir -p "$W/shim" && ln -s "$(command -v readelf)" "$W/shim/aarch64-linux-gnu-readelf"
+else echo "STOP: neither aarch64-linux-gnu-readelf nor readelf is installed (binutils), so the profile checker cannot run"; stops=1; fi
 same=0 new=0 diff=0 other=0
 while read -r f; do
 	h="$R/$f"
@@ -68,6 +72,6 @@ while read -r f; do
 	if [ -L "$W/$f" ]; then [ "$(readlink "/$f")" = "$(readlink "$W/$f")" ] || { echo "BAD link $f"; bad=1; }
 	else cmp -s "$W/$f" "/$f" || { echo "BAD file $f"; bad=1; }; fi
 done < "$W/.files"
-bash "$HERE/check-egl-profile.sh" / "$V" || bad=1
+PATH="$W/shim:$PATH" bash "$HERE/check-egl-profile.sh" / "$V" || bad=1
 [ "$bad" = 0 ] || { echo "VERIFY FAILED: roll back from $B" >&2; exit 5; }
 echo "MIGRATED: $(pacman -Qi "$NEW" | sed -n 's/^Version *: //p'), all $(wc -l < "$W/.files") files verified, profile checker passed, backup $B"

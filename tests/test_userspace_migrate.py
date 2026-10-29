@@ -17,7 +17,7 @@ import unittest
 PKG_DIR = pathlib.Path(__file__).resolve().parents[1] / "packages" / "nvidia-userspace-615"
 SCRIPT = pathlib.Path(os.environ.get("MIGRATE_SH", PKG_DIR / "migrate.sh"))
 ROOT = "usr/lib/nvidia-egpu-615.78.08/"
-TOOLS = ["bash", "tar", "find", "sort", "cmp", "readlink", "date", "mktemp", "wc", "tr", "sed", "grep", "cat", "id", "dirname", "rm", "mkdir", "head", "cut", "xz", "gzip"]
+TOOLS = ["bash", "tar", "find", "sort", "cmp", "readlink", "date", "mktemp", "wc", "tr", "sed", "grep", "cat", "id", "dirname", "rm", "mkdir", "head", "cut", "xz", "gzip", "ln"]
 
 
 def make_package(path, files):
@@ -48,6 +48,8 @@ class MigratePlanTest(unittest.TestCase):
         (self.bin / "pacman").chmod(0o755)
         (self.bin / "lsof").write_text("#!/bin/bash\nexit 0\n")
         (self.bin / "lsof").chmod(0o755)
+        (self.bin / "readelf").write_text("#!/bin/bash\nexit 0\n")
+        (self.bin / "readelf").chmod(0o755)
         make_package(self.pkg, {ROOT + "lib/a.so": b"aaa", ROOT + "lib/b.so": b"bbb"})
 
     def put_host(self, name, data):
@@ -92,6 +94,17 @@ class MigratePlanTest(unittest.TestCase):
         r = self.plan()
         self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
         self.assertIn("lsof is missing", r.stdout)
+
+    def test_missing_readelf_stops_the_plan(self):
+        (self.bin / "readelf").unlink()
+        r = self.plan()
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.assertIn("neither aarch64-linux-gnu-readelf nor readelf", r.stdout)
+
+    def test_cross_prefixed_readelf_alone_is_enough(self):
+        (self.bin / "readelf").rename(self.bin / "aarch64-linux-gnu-readelf")
+        r = self.plan()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_apply_refuses_without_root(self):
         if os.getuid() == 0:
