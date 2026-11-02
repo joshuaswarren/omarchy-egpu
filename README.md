@@ -1,5 +1,22 @@
 # omarchy-egpu
 
+## The projects
+
+Part of the Omarchy on Apple Silicon ecosystem:
+
+- [omarchy-mlx](https://github.com/joshuaswarren/omarchy-mlx) — MLX on the Apple GPU under Linux, and Core ML models on the Neural Engine..
+- [omarchy-ane](https://github.com/joshuaswarren/omarchy-ane) — Linux driver for the Apple Neural Engine: DRM kernel modules and libane..
+- [mil-hwx-compiler](https://github.com/joshuaswarren/mil-hwx-compiler) — compiles Core ML MIL into ANE programs on Linux (M1/M2 targets)..
+- [metal2vk](https://github.com/joshuaswarren/metal2vk) — translates Metal compute kernels to Vulkan SPIR-V with open tools..
+- [mesa-1](https://github.com/joshuaswarren/mesa-1) — Mesa fork carrying the Honeykrisp Vulkan driver work for Apple silicon..
+- [omarchy-cluster](https://github.com/joshuaswarren/omarchy-cluster) — one local model split across Macs on macOS and Omarchy Linux..
+- [omarchy-apple-dev](https://github.com/joshuaswarren/omarchy-apple-dev) — build and ship iOS apps from Omarchy Linux, no Xcode or Mac..
+- [ane-linux-experiments](https://github.com/joshuaswarren/ane-linux-experiments) — Neural Engine on Linux: verified primitives, receipt-backed macOS parity..
+- [coreglass](https://github.com/joshuaswarren/coreglass) — profiler that shows where local inference loses speed on Apple Silicon Linux..
+- [omarchy-inference-fleet](https://github.com/joshuaswarren/omarchy-inference-fleet) — reproducible, pinned single-node MLX inference baselines..
+- [remnic](https://github.com/joshuaswarren/remnic) — local-first memory and context for AI agents..
+- Platform upstream: [omarchy-mac](https://github.com/omacom/omarchy-mac) — Omarchy on Apple Silicon Macs.
+
 Set up an external GPU on Omarchy, check each layer, and run local inference when the card is ready. This repo covers AMD RX 7600 and RX 9070, Intel Arc Pro B60, and NVIDIA RTX 5060 Ti on x86 and Apple Silicon Linux hosts.
 
 The RX 7600 (Navi 33, RDNA3) runs local inference on a 14-inch M2 Max MacBook Pro: amdgpu loads with every ring up and llama.cpp on Vulkan decodes Llama-2-7B Q4_0 at tg128 56.3 t/s with flash attention on and the card recipes' three free settings applied (all 12 CPUs online, decode not CPU-limited). The same settings and numbers are in the [RX 7600 recipes](cards/rx-7600/). Both AMD cards also survive a surprise unplug and replug with the driver loaded ([measured 2026-10-29](benchmarks/2026-10-29-both-cards-hotplug-lab-build.md)). The kernel work is open as [linux-aurora PR #188](https://github.com/omacom/linux-aurora/pull/188), not merged yet. See the [host result](hosts/m2-max/) and the [benchmark record](benchmarks/2026-10-22-rx7600-m2max-llamacpp-vulkan.md).
