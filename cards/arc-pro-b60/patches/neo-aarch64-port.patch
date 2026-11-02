@@ -1,0 +1,49 @@
+diff --git i/shared/source/os_interface/linux/xe/ioctl_helper_xe.cpp w/shared/source/os_interface/linux/xe/ioctl_helper_xe.cpp
+index 84c0d6b..b7c0b03 100644
+--- i/shared/source/os_interface/linux/xe/ioctl_helper_xe.cpp
++++ w/shared/source/os_interface/linux/xe/ioctl_helper_xe.cpp
+@@ -734,6 +734,10 @@ int IoctlHelperXe::createGemExt(const MemRegionsVec &memClassInstances, size_t a
+     }
+ 
+     create.size = allocSize;
++    // w88-neo-aarch64: the xe driver in this kernel only accepts GEM allocation
++    // sizes that are multiples of 16KB; smaller or unaligned sizes fail with EPERM.
++    constexpr uint64_t xeGemAllocationAlignment = 16 * 1024;
++    create.size = alignUp(create.size, xeGemAllocationAlignment);
+     MemoryClassInstance mem = memClassInstances[regionsSize - 1];
+     std::bitset<32> memoryInstances{};
+     bool isSysMemOnly = true;
+diff --git i/shared/source/os_interface/linux/xe/ioctl_helper_xe.h w/shared/source/os_interface/linux/xe/ioctl_helper_xe.h
+index 6a1bd8f..8c95cb7 100644
+--- i/shared/source/os_interface/linux/xe/ioctl_helper_xe.h
++++ w/shared/source/os_interface/linux/xe/ioctl_helper_xe.h
+@@ -153,7 +153,10 @@ class IoctlHelperXe : public IoctlHelper {
+     }
+     uint32_t getGtIdFromTileId(uint32_t tileId, uint16_t engineClass) const override;
+     bool isDeferBackingEnabledForAllocation(size_t allocationSize, AllocationType allocationType) const override;
+-    bool isSmallBarConfigAllowed() const override { return false; }
++    // w88-neo-aarch64 experiment: xe small-BAR (256MB BAR2 window, eGPU on Apple Silicon
++    // has no ReBAR firmware control). i915 already allows this; upstream xe returns false
++    // by policy (documentation/FAQ.md:129).
++    bool isSmallBarConfigAllowed() const override { return true; }
+     bool isLocalMemorySizeNetOfKmdReservations() const override { return true; }
+     void *pciBarrierMmap() override;
+     bool retrieveMmapOffsetForBufferObject(BufferObject &bo, uint64_t flags, uint64_t &offset) override;
+diff --git i/shared/source/utilities/cpuintrinsics.cpp w/shared/source/utilities/cpuintrinsics.cpp
+index 9b0c1ec..09e87b4 100644
+--- i/shared/source/utilities/cpuintrinsics.cpp
++++ w/shared/source/utilities/cpuintrinsics.cpp
+@@ -48,7 +48,13 @@ void sfence() {
+ }
+ 
+ void mfence() {
++#if defined(__ARM_ARCH)
++    // sse2neon does not provide _mm_mfence; a full barrier has the same
++    // ordering guarantees on ARM.
++    __sync_synchronize();
++#else
+     _mm_mfence();
++#endif
+ }
+ 
+ void pause() {
