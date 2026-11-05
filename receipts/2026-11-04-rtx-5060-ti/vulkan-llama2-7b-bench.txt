@@ -1,0 +1,12 @@
+IDLE-GUARD-JOB-START 20261104T234231Z lane=w88 class=perf ab-decode nv5060ti-vulkan-llama2-7b c65840ed r3 pp512-tg128 ngl99 listdev vulkan-env bench
+KERNEL-CMDLINE asahi-words:  kernel=7.1.12-2-20261103.6-lab-ARCH
+PREFLIGHT-RUN
+SETTLE load1=0.25 SETTLE-SKIPPED
+GPU-TIMEOUTS before=0 boot=fc2e88ed-bbd1-444e-b11d-e730edd1544a
+kernel 7.1.12-2-20261103.6-lab-ARCH boot fc2e88ed-bbd1-444e-b11d-e730edd1544a
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| llama 7B Q4_0                  |   3.56 GiB |     6.74 B | Vulkan     |  99 |           pp512 |       2151.44 ± 1.97 |
+| llama 7B Q4_0                  |   3.56 GiB |     6.74 B | Vulkan     |  99 |           tg128 |         77.56 ± 0.76 |
+
+build: 65840ed (1)

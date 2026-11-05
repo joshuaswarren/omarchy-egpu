@@ -1,0 +1,15 @@
+{
+  "date_utc": "2026-11-04",
+  "host": "16-inch M1 Max MacBook Pro running Omarchy Linux",
+  "gpu": "RTX 5060 Ti 16 GB plus M1 Max GPU",
+  "model": "GPT-OSS 120B MXFP4",
+  "backend": "llama.cpp server, CUDA and Vulkan",
+  "prompt_tokens": 11968,
+  "max_tokens": 1,
+  "ubatch": 2048,
+  "flash_attention": true,
+  "request_sha256": "1b50f37a836a648781090bc28b3fd98df3fea2244c3d5f053cdc5cc644f37e56",
+  "first_parsed_stream_event_seconds": 53.135,
+  "server_prompt_processing_seconds": 53.02435,
+  "measurement_note": "The first parsed stream event may not contain a generated token. The server prompt-processing time is from the same run. This is a separate run from the 54.9-second result."
+}
