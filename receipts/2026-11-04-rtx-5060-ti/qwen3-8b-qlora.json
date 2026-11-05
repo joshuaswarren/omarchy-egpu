@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-04",
+  "date_timezone": "America/Chicago",
+  "host": "16-inch M1 Max MacBook Pro running Omarchy Linux",
+  "gpu": "RTX 5060 Ti 16 GB",
+  "model": "Qwen3-8B",
+  "method": "QLoRA, NF4 double quantization, BF16 compute",
+  "dataset": "Tiny Shakespeare, with a disjoint evaluation tail",
+  "steps": 300,
+  "training_tokens": 153600,
+  "guard_exit_code": 0,
+  "training_tokens_per_second": 638.1,
+  "peak_allocated_memory_mib": 7695,
+  "evaluation_loss_before": 2.65287,
+  "evaluation_loss_after": 2.05897,
+  "scope": "Small-data bring-up; not a model-quality claim."
+}
