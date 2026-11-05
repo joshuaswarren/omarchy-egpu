@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-04",
+  "host": "16-inch M1 Max MacBook Pro running Omarchy Linux",
+  "gpu": "RTX 5060 Ti 16 GB",
+  "runs": [
+    {
+      "model": "Qwen2.5-1.5B-Instruct",
+      "precision": "BF16",
+      "method": "Rank-8 LoRA with trainable embeddings and norms",
+      "pure_lora": false,
+      "trainable_parameters": 242693632,
+      "dataset": "Tiny Shakespeare, with a disjoint evaluation tail",
+      "steps": 300,
+      "training_tokens": 307200,
+      "training_wall_seconds": 99.03,
+      "training_tokens_per_second": 3102,
+      "peak_device_memory_mib_nvidia_smi": 11266,
+      "evaluation_loss_before": 3.07196,
+      "evaluation_loss_after": 2.96305,
+      "scope": "Small-data bring-up; not a model-quality claim."
+    },
+    {
+      "model": "Qwen2.5-1.5B-Instruct",
+      "precision": "BF16",
+      "method": "Rank-8 LoRA with only adapter parameters trainable",
+      "pure_lora": true,
+      "trainer_completed": true,
+      "wrapper_exit_code": 1,
+      "trainable_parameters": 9232384,
+      "dataset": "Tiny Shakespeare, with a disjoint evaluation tail",
+      "steps": 300,
+      "training_tokens_per_second": 3530.2,
+      "peak_allocated_memory_mib": 9486,
+      "evaluation_loss_before": 3.07196,
+      "evaluation_loss_after": 2.91265,
+      "scope": "Small-data bring-up; trainer completed but the wrapper failed."
+    }
+  ]
+}

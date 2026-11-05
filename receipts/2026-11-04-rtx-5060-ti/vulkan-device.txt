@@ -1,0 +1,4 @@
+ggml_vulkan: Found 1 Vulkan devices:
+ggml_vulkan: 0 = NVIDIA GeForce RTX 5060 Ti (NVIDIA) | uma: 0 | fp16: 1 | bf16: 1 | fp4: 0 | warp size: 32 | shared memory: 49152 | int dot: 1 | matrix cores: NV_coopmat2v
+version: 0.6.0-dev (build 1, commit 65840ed)
+built with GNU 16.1.1 for Linux aarch64
