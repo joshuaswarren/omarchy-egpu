@@ -106,5 +106,6 @@ host guides.
 | [2026-10-22-rx7600-m2max-llamacpp-vulkan.md](2026-10-22-rx7600-m2max-llamacpp-vulkan.md) | RX 7600 | llama.cpp Vulkan inference, single-host (3 repetitions; alternating A/B tests; matched Metal baseline not run) | MEASURED |
 | [2026-10-23-rx7600-m2max-model-sweep.md](2026-10-23-rx7600-m2max-model-sweep.md) | RX 7600 | Model sweeps plus a dispatch-latency probe. The first sweeps ran under co-running load; the dmashaders sweep ran at load 0.3 or below. Not a power-matched comparison | MEASURED |
 | [2026-10-23-b60-m1max-llamacpp-vulkan.md](2026-10-23-b60-m1max-llamacpp-vulkan.md) | Arc Pro B60 | llama.cpp Vulkan via ANV, single-host, 3 repetitions; the first run on one CPU, later runs on 10 CPUs; the buffer-placement results need private patches | MEASURED |
+| [2026-11-07-m2-max-3090-3090ti.md](2026-11-07-m2-max-3090-3090ti.md) | RTX 3090 / RTX 3090 Ti | Third-party report by openresearchtools: llama.cpp CUDA and Vulkan inference, single-card and two-card, on a 16-inch M2 Max; evidence archive SHA256 verified on receipt, 593/593 files match its manifest | MEASURED (reported, not rerun here) |
 
 The working RX 7600 run is documented in the [host guide](../hosts/m2-max/README.md) and its [benchmark record](2026-10-22-rx7600-m2max-llamacpp-vulkan.md); it depends on unpublished kernel and device-tree changes.
