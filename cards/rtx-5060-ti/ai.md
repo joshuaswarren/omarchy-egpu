@@ -1,9 +1,5 @@
 # local-ML on the RTX 5060 Ti (Blackwell, GB206, 16 GB)
 
-What each stack can and cannot use this card for. Anything marked untested has
-no run on our hardware: no number on this page is a measurement, and no
-performance or model-size claim is made here.
-
 Driver status is in [setup.md](setup.md); the patch and upstream position in
 [patches.md](patches.md).
 
@@ -59,12 +55,3 @@ binary is not assumed to carry it.
 Expect obstacles before speed. The 2 GiB or 8 GiB prefetch window behind the
 tunnel is source-defined and unmeasured, and nothing here establishes what a
 given allocation can map. Measure before quoting a number or a ceiling.
-
-## Honesty box
-
-- No RTX 5060 Ti has run on any host in this repository. The Apple Silicon
-  cells are blocked before the first `modprobe`.
-- Nothing on this page is a performance claim. Numbers published elsewhere for
-  this card are somebody else's run, on their hardware and their driver.
-- MLX is not an eGPU path here. On the laptops, keep MLX on the M-series GPU;
-  the eGPU is for the CUDA or Vulkan stacks.

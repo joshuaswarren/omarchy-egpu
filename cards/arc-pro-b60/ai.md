@@ -59,11 +59,3 @@ alignment assignment. Full record: [dual-card
 record](../../benchmarks/2026-10-24-dualcard-b60-5060ti-m1max.md).
 
 Expect obstacles before speed. The measured run mapped a 256 MiB BAR for 24 GiB of VRAM, because the 32 GiB resize cannot fit the tunnel window. Weights stayed in VRAM only when the kernel reported that real 256 MiB window; the stock write-combined mapping and CPU-written buffers needed local patches (see the benchmark record). The device DMA clamp to the tunnel aperture is still source-defined and unmeasured (see the IOVA note in [setup.md](setup.md)).
-
-## Honesty box
-
-- One stack (llama.cpp Vulkan) has measured results on one host, the 16-inch M1 Max, with local kernel patches. No other host, stack or card combination is proven.
-- The numbers on this page link to a record that states their conditions. The fastest ones need private driver patches that are not upstream.
-- Numbers published elsewhere for this card are somebody else's run, on their hardware and their build.
-- MLX is not an eGPU path here. On the laptops, keep MLX on the M-series GPU;
-  the eGPU is for the Vulkan and Level Zero stacks.
