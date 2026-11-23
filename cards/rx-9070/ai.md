@@ -28,10 +28,3 @@ GGML_VK_VISIBLE_DEVICES=0 llama-bench -m qwen2.5-7b-instruct-q4_k_m-00001-of-000
 ```
 
 Decode is limited by the number of GPU dispatches per token, not by the model size: see [why](README.md#why-decode-is-dispatch-bound-on-this-setup). The flag pair `nogttspill,dmashaders` raised decode by about 27 to 28 percent on two boots, and `dmashaders` alone by 32.6 percent on a third (llama.cpp Vulkan, Qwen2.5-7B Q4_K_M); how to set it, and what the measurement does not show, are in the [setup note](setup.md#decode-environment-setting-apple-silicon-egpu-hosts) and the [benchmark record](../../benchmarks/2026-10-26-rx9070-m2max-radv-perftest.md).
-
-## Honesty box
-
-- One stack (llama.cpp Vulkan) and one model family have measured results, on one host. No other combination is proven.
-- No ROCm, Ollama, vLLM or tinygrad run exists on this card.
-- The matched macOS Metal baseline has not run; no cross-machine ratio is claimed.
-- The working run required unpublished changes. Reproduction on a stock system is not yet possible.

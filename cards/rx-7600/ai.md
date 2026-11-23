@@ -38,10 +38,3 @@ external card on a stock system once the driver prerequisites exist.
 The card has 8 GB VRAM. This model, at 4.36 GiB with all layers offloaded,
 fits comfortably; larger models need CPU offload and become link-bound. The
 measured decode rate already reflects the USB4/PCIe tunnel.
-
-## Honesty box
-
-- One stack (llama.cpp Vulkan) has measured results for several models on one host. No other combination is proven.
-- No ROCm, Ollama, vLLM or tinygrad run exists on this card.
-- The matched macOS Metal baseline from the [method](../../benchmarks/method.md) has not run; no cross-machine ratio is claimed.
-- The working run required unpublished changes. Reproduction beyond the lab is not yet possible.
