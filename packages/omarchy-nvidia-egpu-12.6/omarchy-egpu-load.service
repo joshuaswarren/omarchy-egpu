@@ -1,0 +1,15 @@
+[Unit]
+Description=Bind the Thunderbolt eGPUs (identity emulation, then NVIDIA/xe load)
+Documentation=file:///usr/lib/omarchy-egpu/egpu-load.sh
+ConditionKernelCommandLine=omarchy.egpu=1
+After=bolt.service systemd-udevd.service
+Wants=bolt.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/omarchy-egpu/egpu-load.sh
+TimeoutStartSec=420
+
+[Install]
+WantedBy=multi-user.target

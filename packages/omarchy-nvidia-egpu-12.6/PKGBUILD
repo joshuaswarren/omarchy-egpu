@@ -1,0 +1,37 @@
+# NVIDIA 615.78.08 open kernel modules + boot-time eGPU bind for the stock linux-aurora 7.1.12-2-12.6-sep-ARCH kernel (jw16).
+# Modules are built out of tree by ../build-615-modules-12.6.sh (clang 22, same compiler as the kernel); this file only packages them.
+# pfx.ko (build-pfx-12.6.sh) writes PORT_PREFMEM_ENABLE once per boot: the stock 12.6 pcie-apple.c lacks the tunnel_cold_init hook fix.
+# The NVIDIA userspace (/usr/lib/nvidia-egpu-615.78.08, firmware under /usr/lib/firmware/nvidia/615.78.08) is installed separately.
+pkgname=omarchy-nvidia-egpu-12.6
+pkgver=615.78.08
+pkgrel=6
+pkgdesc='NVIDIA 615.78.08 open modules and boot-time eGPU bind for linux-aurora 7.1.12-2-12.6-sep-ARCH'
+arch=(aarch64)
+url='https://github.com/NVIDIA/open-gpu-kernel-modules'
+license=('GPL-2.0-only OR MIT')
+depends=(lab-linux-aurora-modules-12.6 kmod pciutils python)
+install=omarchy-nvidia-egpu-12.6.install
+options=(!strip !debug !lto)
+_krel=7.1.12-2-12.6-sep-ARCH
+
+package() {
+	local m
+	for m in nvidia nvidia-modeset nvidia-uvm nvidia-drm; do
+		install -Dm644 "$startdir/dist/$m.ko" "$pkgdir/usr/lib/modules/$_krel/updates/$m.ko"
+	done
+	install -Dm755 "$startdir/egpu-load.sh" "$pkgdir/usr/lib/omarchy-egpu/egpu-load.sh"
+	install -Dm644 "$startdir/dist/pfx.ko" "$pkgdir/usr/lib/omarchy-egpu/pfx.ko"
+	install -Dm755 "$startdir/identity-all.py" "$pkgdir/usr/lib/omarchy-egpu/identity-all.py"
+	install -Dm644 "$startdir/$_krel.env" "$pkgdir/usr/lib/omarchy-egpu/profiles/$_krel.env"
+	install -Dm644 "$startdir/omarchy-nvidia-egpu.conf" "$pkgdir/usr/lib/modprobe.d/omarchy-nvidia-egpu.conf"
+	install -Dm644 "$startdir/omarchy-egpu-load.service" "$pkgdir/usr/lib/systemd/system/omarchy-egpu-load.service"
+	install -Dm755 "$startdir/egpu-default.sh" "$pkgdir/usr/lib/omarchy-egpu/egpu-default.sh"
+	install -Dm644 "$startdir/gate.py" "$pkgdir/usr/lib/omarchy-egpu/gate.py"
+	install -Dm644 "$startdir/uki_layout.py" "$pkgdir/usr/lib/omarchy-egpu/uki_layout.py"
+	install -Dm644 "$startdir/features.toml" "$pkgdir/usr/lib/omarchy-egpu/features.toml"
+	install -Dm644 "$startdir/omarchy-egpu-disarm.service" "$pkgdir/usr/lib/systemd/system/omarchy-egpu-disarm.service"
+	install -d "$pkgdir/usr/lib/systemd/system/sysinit.target.wants"
+	ln -s ../omarchy-egpu-disarm.service "$pkgdir/usr/lib/systemd/system/sysinit.target.wants/omarchy-egpu-disarm.service"
+	install -d "$pkgdir/usr/lib/systemd/system/multi-user.target.wants"
+	ln -s ../omarchy-egpu-load.service "$pkgdir/usr/lib/systemd/system/multi-user.target.wants/omarchy-egpu-load.service"
+}

@@ -1,0 +1,16 @@
+_krel=7.1.12-2-12.6-sep-ARCH
+
+post_install() {
+	depmod -a "$_krel"
+	[ -x /usr/lib/nvidia-egpu-615.78.08/bin/nvidia-smi ] || echo "omarchy-nvidia-egpu-12.6: WARNING /usr/lib/nvidia-egpu-615.78.08 (NVIDIA userspace) is missing; the load unit will fail."
+	echo "omarchy-nvidia-egpu-12.6: the RTX 5060 Ti binds on boots whose kernel command line has omarchy.egpu=1 and the hp tokens (limine entry Omarchy/linux-aurora-12.6-egpu)."
+	echo "  check after boot: cat /run/omarchy-egpu/status"
+}
+
+post_upgrade() {
+	post_install
+}
+
+post_remove() {
+	depmod -a "$_krel"
+}
