@@ -1,0 +1,15 @@
+[Unit]
+Description=Hand the default boot entry back to stock at the start of an eGPU boot (failsafe)
+Documentation=file:///usr/lib/omarchy-egpu/egpu-default.sh
+ConditionKernelCommandLine=omarchy.egpu=1
+ConditionPathExists=/etc/omarchy-egpu/default-entry
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/omarchy-egpu/egpu-default.sh disarm
+
+[Install]
+WantedBy=sysinit.target
